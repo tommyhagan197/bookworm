@@ -355,8 +355,9 @@ export default function BrowseView({ onOpenBook }) {
           transition: opacity 0.15s;
         }
         .browse-btn.in-library {
-          background: rgba(139,111,71,0.15);
+          background: rgba(224,124,58,0.12);
           color: var(--accent);
+          border: 1px solid rgba(224,124,58,0.3);
         }
         .browse-btn.loading { opacity: 0.7; cursor: default; }
         .btn-spinner {
