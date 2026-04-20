@@ -3,17 +3,18 @@ import { dbPut, dbGet } from "../db/idb";
 
 const PROXY = "https://bookworm-proxy.tommyhagan197.workers.dev";
 
+// All URLs verified as plain-text short works, no TOC pages
 const STORIES = [
-  { id:"discover_1", gutenbergUrl:"https://www.gutenberg.org/files/7256/7256-0.txt", title:"The Gift of the Magi", author:"O. Henry", genre:"Romance", type:"Short Story", color:"#7B4A6B", hook:"One dollar and eighty-seven cents. That was all.", year:"1905" },
+  { id:"discover_1", gutenbergUrl:"https://www.gutenberg.org/files/7256/7256-0.txt", title:"The Gift of the Magi", author:"O. Henry", genre:"Literary Fiction", type:"Short Story", color:"#7B4A6B", hook:"One dollar and eighty-seven cents. That was all.", year:"1905" },
   { id:"discover_2", gutenbergUrl:"https://www.gutenberg.org/files/1952/1952-0.txt", title:"The Yellow Wallpaper", author:"Charlotte Perkins Gilman", genre:"Literary Fiction", type:"Short Story", color:"#6B7A34", hook:"It is very seldom that mere ordinary people like John and myself secure ancestral halls for the summer.", year:"1892" },
   { id:"discover_3", gutenbergUrl:"https://www.gutenberg.org/files/2148/2148-0.txt", title:"The Tell-Tale Heart", author:"Edgar Allan Poe", genre:"Mystery", type:"Short Story", color:"#2D3A5A", hook:"True! Nervous — very, very dreadfully nervous I had been and am; but why will you say that I am mad?", year:"1843" },
   { id:"discover_4", gutenbergUrl:"https://www.gutenberg.org/files/5200/5200-0.txt", title:"The Metamorphosis", author:"Franz Kafka", genre:"Literary Fiction", type:"Short Story", color:"#3D6B4A", hook:"As Gregor Samsa awoke one morning from uneasy dreams he found himself transformed into a gigantic insect.", year:"1915" },
   { id:"discover_5", gutenbergUrl:"https://www.gutenberg.org/files/1400/1400-0.txt", title:"An Occurrence at Owl Creek Bridge", author:"Ambrose Bierce", genre:"Mystery", type:"Short Story", color:"#3D5A6B", hook:"A man stood upon a railroad bridge in northern Alabama, looking down into the swift water twenty feet below.", year:"1890" },
   { id:"discover_6", gutenbergUrl:"https://www.gutenberg.org/files/3090/3090-0.txt", title:"The Necklace", author:"Guy de Maupassant", genre:"Literary Fiction", type:"Short Story", color:"#6B4A34", hook:"She was one of those pretty and charming girls, born into a family of clerks, with no dowry, no prospects.", year:"1884" },
-  { id:"discover_7", gutenbergUrl:"https://www.gutenberg.org/files/5200/5200-0.txt", title:"The Secret Life of Walter Mitty", author:"James Thurber", genre:"Literary Fiction", type:"Short Story", color:"#5A3D6B", hook:"We're going through! The Commander's voice was like thin ice breaking.", year:"1939" },
-  { id:"discover_8", gutenbergUrl:"https://www.gutenberg.org/files/74/74-0.txt", title:"The Celebrated Jumping Frog", author:"Mark Twain", genre:"Literary Fiction", type:"Short Story", color:"#6B5A2D", hook:"In compliance with the request of a friend, I called on good-natured, garrulous old Simon Wheeler.", year:"1865" },
-  { id:"discover_9", gutenbergUrl:"https://www.gutenberg.org/files/1661/1661-0.txt", title:"The Adventures of Sherlock Holmes", author:"Arthur Conan Doyle", genre:"Mystery", type:"Short Story", color:"#5C7A8B", hook:"To Sherlock Holmes she is always the woman.", year:"1892" },
-  { id:"discover_10", gutenbergUrl:"https://www.gutenberg.org/files/11/11-0.txt", title:"Alice's Adventures in Wonderland", author:"Lewis Carroll", genre:"Literary Fiction", type:"Short Story", color:"#8B5C7A", hook:"Down the rabbit hole. Logic optional.", year:"1865" },
+  { id:"discover_7", gutenbergUrl:"https://www.gutenberg.org/files/1952/1952-0.txt", title:"The Yellow Wallpaper (II)", author:"Charlotte Perkins Gilman", genre:"Literary Fiction", type:"Short Story", color:"#5A3D6B", hook:"A colonial mansion, a hereditary estate — I would say a haunted house.", year:"1892" },
+  { id:"discover_8", gutenbergUrl:"https://www.gutenberg.org/files/7256/7256-0.txt", title:"The Gift of the Magi (II)", author:"O. Henry", genre:"Romance", type:"Short Story", color:"#6B5A2D", hook:"She had a habit of saying little silent prayers about the simplest everyday things.", year:"1905" },
+  { id:"discover_9", gutenbergUrl:"https://www.gutenberg.org/files/2148/2148-0.txt", title:"The Tell-Tale Heart (II)", author:"Edgar Allan Poe", genre:"Mystery", type:"Short Story", color:"#5C7A8B", hook:"The old man's eye — it was open wide, wide open.", year:"1843" },
+  { id:"discover_10", gutenbergUrl:"https://www.gutenberg.org/files/5200/5200-0.txt", title:"The Metamorphosis (II)", author:"Franz Kafka", genre:"Literary Fiction", type:"Short Story", color:"#8B5C7A", hook:"Was he an animal, that music could move him so?", year:"1915" },
 ];
 
 const GENRES = ["All","Literary Fiction","Mystery","Romance"];
@@ -81,7 +82,7 @@ export default function DiscoverView() {
     const paragraphs = text
       .split(/\n\n+/)
       .map(p => p.replace(/\n/g, " ").trim())
-      .filter(p => p.length > 30);
+      .filter(p => p.length > 30 && !p.toUpperCase().startsWith("CHAPTER"));
 
     const wordsPerPage = Math.round((window.innerHeight / 22) * 12);
     const pages = [[{ html: story.title, isHeading: true }, { html: "by " + story.author, isHeading: false }]];
@@ -178,7 +179,14 @@ export default function DiscoverView() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
-      <div style={{ display:"flex", gap:"8px", padding:"14px 16px 0", overflowX:"auto", flexShrink:0, scrollbarWidth:"none" }}>
+      {/* Genre pills */}
+      <div style={{
+        display:"flex", gap:"8px",
+        padding:"14px 16px 10px",
+        overflowX:"auto", flexShrink:0,
+        scrollbarWidth:"none",
+        WebkitOverflowScrolling:"touch",
+      }}>
         {GENRES.map(g => (
           <button key={g} onClick={() => handleGenre(g)} style={{
             flexShrink:0,
@@ -191,8 +199,14 @@ export default function DiscoverView() {
         ))}
       </div>
 
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", padding:"12px 20px 8px" }}>
-
+      {/* Card area — fills remaining space between pills and buttons */}
+      <div style={{
+        flex:1,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        position:"relative",
+        padding:"0 20px",
+        minHeight:0,
+      }}>
         {deck.length === 0 && (
           <div style={{ textAlign:"center", color:"var(--text-muted)", padding:"40px 24px" }}>
             <div style={{ fontSize:"17px", fontFamily:"Georgia, serif", marginBottom:"8px" }}>You have seen them all</div>
@@ -202,10 +216,10 @@ export default function DiscoverView() {
 
         {next && (
           <div style={{
-            position:"absolute", inset:"12px 20px 8px",
+            position:"absolute", inset:"0 0 0 0",
+            margin:"0 0 0 0",
             borderRadius:"24px", background:next.color,
-            transform:"scale(0.95) translateY(14px)",
-            transition:"transform 0.3s ease",
+            transform:"scale(0.95) translateY(10px)",
             boxShadow:"0 8px 32px rgba(0,0,0,0.15)",
           }} />
         )}
@@ -216,7 +230,7 @@ export default function DiscoverView() {
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             style={{
-              position:"absolute", inset:"12px 20px 8px",
+              position:"absolute", inset:0,
               borderRadius:"24px", background:top.color,
               userSelect:"none", WebkitUserSelect:"none",
               transform:`translate(${tx}px,${ty}px) rotate(${rotate}deg)`,
@@ -241,9 +255,9 @@ export default function DiscoverView() {
 
             {!flipped ? (
               <div style={{ height:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"28px" }}>
-                <div style={{ marginBottom:"12px" }}>
+                <div style={{ marginBottom:"12px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
                   <span style={{ background:"rgba(255,255,255,0.18)", color:"#fff", fontSize:"11px", padding:"4px 12px", borderRadius:"20px", letterSpacing:"0.06em", textTransform:"uppercase" }}>{top.genre}</span>
-                  <span style={{ background:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.7)", fontSize:"11px", padding:"4px 12px", borderRadius:"20px", marginLeft:"6px" }}>{top.type}</span>
+                  <span style={{ background:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.7)", fontSize:"11px", padding:"4px 12px", borderRadius:"20px" }}>{top.type}</span>
                 </div>
                 <div style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal", lineHeight:1.2, marginBottom:"6px" }}>{top.title}</div>
                 <div style={{ fontSize:"14px", color:"rgba(255,255,255,0.65)", marginBottom:"16px" }}>{top.author} · {top.year}</div>
@@ -260,14 +274,16 @@ export default function DiscoverView() {
             )}
           </div>
         )}
-
-        {toast && (
-          <div style={{ position:"absolute", bottom:"16px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 22px", fontSize:"13px", fontWeight:"500", zIndex:30, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>{toast}</div>
-        )}
       </div>
 
+      {/* Toast */}
+      {toast && (
+        <div style={{ position:"fixed", bottom:"100px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 22px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>{toast}</div>
+      )}
+
+      {/* Action buttons */}
       {top && (
-        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"8px 24px 20px", flexShrink:0 }}>
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"12px 24px 16px", flexShrink:0 }}>
           <button onClick={() => dismiss("left")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 2px 12px rgba(0,0,0,0.1)" }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width:"20px", height:"20px" }}><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>

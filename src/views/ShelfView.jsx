@@ -146,7 +146,7 @@ export default function ShelfView({ onOpenBook }) {
       <style>{`
         .shelf-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 16px;
           align-items: start;
         }
