@@ -150,6 +150,7 @@ export default function ReaderView({ bookId, onClose }) {
       {/* Always-visible close button — never hidden by HUD logic */}
       <button
         className={"reader-close-persistent" + (hudVisible ? " hud-open" : "")}
+        onTouchEnd={(e) => { e.stopPropagation(); onClose(); }}
         onClick={onClose}
         aria-label="Close reader"
       >
