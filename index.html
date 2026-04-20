@@ -1,13 +1,31 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>bookworm</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BookWorm">
+  <meta name="theme-color" content="#f5f0e8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgcnk9IjExMiIgZmlsbD0iI2UwN2MzYSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTglIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSIyODAiIGZv
+cat >> ~/bookworm/src/index.css << 'CSSEOF'
+
+/* ── Safe area fixes ── */
+body::after {
+  height: calc(80px + env(safe-area-inset-bottom)) !important;
+}
+
+#bottom-nav {
+  bottom: max(4px, env(safe-area-inset-bottom)) !important;
+  padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+}
+
+.view {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+}
+CSSEOF
+sed -i '' 's/active={view === '\''browse'\''}/active={true}/g' ~/bookworm/src/App.jsx
+cd ~/bookworm && git add -A && git commit -m "fix safe area, PWA icon, browse init" && git push
+cd ~/bookworm && git log --oneline -3
+cd ~/bookworm && git log --oneline -3

@@ -104,7 +104,7 @@ export default function App() {
         />
       )}
       {view === 'browse' && (
-        <BrowseView onShowToast={showToast} active={view === 'browse'} />
+        <BrowseView onShowToast={showToast} active={true} />
       )}
       {view === 'upload' && (
         <UploadView
