@@ -110,7 +110,7 @@ export default function BrowseView({ onShowToast, active }) {
     const author = (book.authors && book.authors[0] && book.authors[0].name) || 'Unknown author';
     setDownloading(d => ({...d, [book.id]: true}));
     try {
-      const proxyUrl = `${PROXY_BASE}/?url=${encodeURIComponent(epubUrl)}`;
+      const proxyUrl = `${PROXY_BASE}/${encodeURIComponent(epubUrl)}`;
       const resp = await fetch(proxyUrl);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const buffer = await resp.arrayBuffer();
