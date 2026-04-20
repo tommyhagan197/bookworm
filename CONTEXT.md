@@ -236,6 +236,14 @@ cat /Users/tommyhagan/bookworm/src/reader/epubProcessor.js | pbcopy
 
 ---
 
+## Session Notes (April 20 2026)
+- Accent color changed to Ember #E07C3A, accent-dark to Kindling #C0602A, --brand #6B5344 added
+- PWA manifest added, app icon is orange B on SVG, theme-color updated to #E07C3A
+- DiscoverView fully rebuilt: Tinder swipe deck, 10 hardcoded short stories, tap to flip, swipe to add/skip, genre filter pills, SVG action buttons (no emojis)
+- Seen state persisted to IndexedDB under discover_seen key — deck survives tab switches
+- Swipe right saves book record to IndexedDB books store — appears on Shelf immediately
+- All emojis replaced with SVG icons throughout
+
 ## Known Issues / Watch Out For
 
 - **Reader not ported yet** — biggest gap. Books download correctly but can't be opened and read inside the React app.
