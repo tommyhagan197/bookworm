@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { dbPut } from "../db/idb";
+import { useState, useRef, useEffect } from "react";
+import { dbPut, dbGet, dbGetAll } from "../db/idb";
 
 const STORIES = [
   { id:"discover_1", title:"The Gift of the Magi", author:"O. Henry", genre:"Romance", color:"#7B4A6B", hook:"One dollar and eighty-seven cents. That was all. And sixty cents of it was in pennies.", preview:"Della counted it three times. One dollar and eighty-seven cents. And the next day would be Christmas. There was nothing left to do but flop down on the shabby little couch and howl — so Della did it, which instigates the moral reflection that life is made up of sobs, sniffles, and smiles, with sniffles predominating.", year:"1905" },
@@ -19,7 +19,8 @@ const SWIPE_THRESHOLD = 75;
 
 export default function DiscoverView() {
   const [genre, setGenre] = useState("All");
-  const [deck, setDeck] = useState([...STORIES]);
+  const [deck, setDeck] = useState(null); // null = loading
+  const [seen, setSeen] = useState({});
   const [flipped, setFlipped] = useState(false);
   const [drag, setDrag] = useState({ active:false, x:0, y:0 });
   const [flyOff, setFlyOff] = useState(null);
@@ -28,12 +29,29 @@ export default function DiscoverView() {
   const startPos = useRef({ x:0, y:0 });
   const moved = useRef(false);
 
+  // Load seen IDs from IndexedDB on mount
+  useEffect(() => {
+    async function loadSeen() {
+      try {
+        const row = await dbGet("settings", "discover_seen");
+        const seenMap = row ? row.value : {};
+        setSeen(seenMap);
+        setDeck(STORIES.filter(s => !seenMap[s.id]));
+      } catch(e) {
+        setDeck([...STORIES]);
+      }
+    }
+    loadSeen();
+  }, []);
+
   function handleGenre(g) {
     setGenre(g);
-    setDeck(g === "All" ? [...STORIES] : STORIES.filter(s => s.genre === g));
+    setDeck((g === "All" ? STORIES : STORIES.filter(s => s.genre === g)).filter(s => !seen[s.id]));
     setFlipped(false);
     setFlyOff(null);
   }
+
+  if (deck === null) return <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text-muted)", fontSize:"14px" }}>Loading…</div>;
 
   const top = deck[0];
   const next = deck[1];
@@ -45,6 +63,11 @@ export default function DiscoverView() {
 
   async function dismiss(direction) {
     if (!top) return;
+    // Mark as seen immediately
+    const newSeen = { ...seen, [top.id]: true };
+    setSeen(newSeen);
+    try { await dbPut("settings", { id: "discover_seen", value: newSeen }); } catch(e) {}
+
     if (direction === "right" && !saved[top.id]) {
       try {
         await dbPut("books", {
