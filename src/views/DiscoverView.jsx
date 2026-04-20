@@ -84,7 +84,7 @@ export default function DiscoverView() {
         });
         setSaved(s => ({ ...s, [top.id]: true }));
       } catch(e) { console.error("Save failed", e); }
-      showToast("Added to shelf ✓");
+      showToast("Added to shelf");
     } else if (direction === "left") {
       showToast("Skipped");
     }
@@ -147,7 +147,7 @@ export default function DiscoverView() {
 
         {deck.length === 0 && (
           <div style={{ textAlign:"center", color:"var(--text-muted)", padding:"40px 24px" }}>
-            <div style={{ fontSize:"36px", marginBottom:"12px" }}>📚</div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ width:"48px", height:"48px", marginBottom:"12px", opacity:0.3 }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             <div style={{ fontSize:"17px", fontFamily:"Georgia, serif", marginBottom:"8px" }}>You have seen them all</div>
             <div style={{ fontSize:"13px" }}>Change the genre filter or check your shelf</div>
           </div>
@@ -218,8 +218,12 @@ export default function DiscoverView() {
       {/* Action buttons */}
       {top && (
         <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"8px 24px 20px", flexShrink:0 }}>
-          <button onClick={() => dismiss("left")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", fontSize:"20px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 2px 12px rgba(0,0,0,0.1)", transition:"transform 0.1s" }}>✕</button>
-          <button onClick={() => setFlipped(f => !f)} style={{ width:"46px", height:"46px", borderRadius:"50%", background:"var(--surface)", border:"1.5px solid rgba(224,124,58,0.25)", color:"var(--text-muted)", fontSize:"15px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent" }}>👁</button>
+          <button onClick={() => dismiss("left")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", fontSize:"20px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 2px 12px rgba(0,0,0,0.1)", transition:"transform 0.1s" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width:"20px", height:"20px" }}><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          <button onClick={() => setFlipped(f => !f)} style={{ width:"46px", height:"46px", borderRadius:"50%", background:"var(--surface)", border:"1.5px solid rgba(224,124,58,0.25)", color:"var(--text-muted)", fontSize:"15px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width:"18px", height:"18px" }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
           <button onClick={() => dismiss("right")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--accent)", border:"none", color:"#fff", fontSize:"24px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 4px 20px rgba(224,124,58,0.45)", transition:"transform 0.1s" }}>+</button>
         </div>
       )}
