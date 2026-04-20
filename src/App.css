@@ -4,8 +4,9 @@
 :root {
   --bg:          #f5f0e8;
   --surface:     #ede8df;
-  --accent:      #8b6f47;
-  --accent-dark: #6b5234;
+  --accent:      #E07C3A;
+  --accent-dark: #C0602A;
+  --brand:       #6B5344;
   --text:        #2c2417;
   --text-muted:  #9c8b78;
   --nav-h:       72px;
@@ -47,7 +48,7 @@ body {
   height: calc(var(--nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   background: var(--surface);
-  border-top: 1px solid rgba(139, 111, 71, 0.15);
+  border-top: 1px solid rgba(224, 124, 58, 0.15);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -108,7 +109,7 @@ body {
   align-items: center;
   justify-content: center;
   margin-top: -28px; /* lifts above nav bar */
-  box-shadow: 0 4px 16px rgba(139, 111, 71, 0.4), 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(224, 124, 58, 0.4), 0 2px 4px rgba(0,0,0,0.1);
   color: #fff;
   transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
   -webkit-tap-highlight-color: transparent;
@@ -116,12 +117,12 @@ body {
 
 .nav-center-btn:active {
   transform: scale(0.93);
-  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.35);
+  box-shadow: 0 2px 8px rgba(224, 124, 58, 0.35);
 }
 
 .nav-center-btn.active {
   background: var(--accent-dark);
-  box-shadow: 0 4px 20px rgba(107, 82, 52, 0.5);
+  box-shadow: 0 4px 20px rgba(192, 96, 42, 0.5);
 }
 
 .nav-center-btn svg {
