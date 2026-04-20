@@ -3,7 +3,6 @@ import { dbPut, dbGet } from "../db/idb";
 
 const PROXY = "https://bookworm-proxy.tommyhagan197.workers.dev";
 
-// All URLs verified as plain-text short works, no TOC pages
 const STORIES = [
   { id:"discover_1", gutenbergUrl:"https://www.gutenberg.org/files/7256/7256-0.txt", title:"The Gift of the Magi", author:"O. Henry", genre:"Literary Fiction", type:"Short Story", color:"#7B4A6B", hook:"One dollar and eighty-seven cents. That was all.", year:"1905" },
   { id:"discover_2", gutenbergUrl:"https://www.gutenberg.org/files/1952/1952-0.txt", title:"The Yellow Wallpaper", author:"Charlotte Perkins Gilman", genre:"Literary Fiction", type:"Short Story", color:"#6B7A34", hook:"It is very seldom that mere ordinary people like John and myself secure ancestral halls for the summer.", year:"1892" },
@@ -70,14 +69,11 @@ export default function DiscoverView() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.text();
 
-    let text = raw;
     const startIdx = raw.indexOf("*** START OF");
     const endIdx = raw.indexOf("*** END OF");
-    if (startIdx !== -1) text = raw.slice(raw.indexOf("\n", startIdx) + 1);
-    if (endIdx !== -1) {
-      const endOffset = endIdx - (raw.length - text.length);
-      if (endOffset > 0) text = text.slice(0, endOffset);
-    }
+    const begin = startIdx !== -1 ? raw.indexOf("\n", startIdx) + 1 : 0;
+    const end = endIdx !== -1 ? endIdx : raw.length;
+    const text = raw.slice(begin, end);
 
     const paragraphs = text
       .split(/\n\n+/)
@@ -179,14 +175,7 @@ export default function DiscoverView() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
-      {/* Genre pills */}
-      <div style={{
-        display:"flex", gap:"8px",
-        padding:"14px 16px 10px",
-        overflowX:"auto", flexShrink:0,
-        scrollbarWidth:"none",
-        WebkitOverflowScrolling:"touch",
-      }}>
+      <div style={{ display:"flex", gap:"8px", padding:"14px 16px 10px", overflowX:"auto", flexShrink:0, scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
         {GENRES.map(g => (
           <button key={g} onClick={() => handleGenre(g)} style={{
             flexShrink:0,
@@ -199,14 +188,8 @@ export default function DiscoverView() {
         ))}
       </div>
 
-      {/* Card area — fills remaining space between pills and buttons */}
-      <div style={{
-        flex:1,
-        display:"flex", alignItems:"center", justifyContent:"center",
-        position:"relative",
-        padding:"0 20px",
-        minHeight:0,
-      }}>
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", padding:"0 20px", minHeight:0 }}>
+
         {deck.length === 0 && (
           <div style={{ textAlign:"center", color:"var(--text-muted)", padding:"40px 24px" }}>
             <div style={{ fontSize:"17px", fontFamily:"Georgia, serif", marginBottom:"8px" }}>You have seen them all</div>
@@ -215,13 +198,7 @@ export default function DiscoverView() {
         )}
 
         {next && (
-          <div style={{
-            position:"absolute", inset:"0 0 0 0",
-            margin:"0 0 0 0",
-            borderRadius:"24px", background:next.color,
-            transform:"scale(0.95) translateY(10px)",
-            boxShadow:"0 8px 32px rgba(0,0,0,0.15)",
-          }} />
+          <div style={{ position:"absolute", inset:0, borderRadius:"24px", background:next.color, transform:"scale(0.95) translateY(10px)", boxShadow:"0 8px 32px rgba(0,0,0,0.15)" }} />
         )}
 
         {top && (
@@ -239,12 +216,8 @@ export default function DiscoverView() {
               overflow:"hidden", touchAction:"none",
             }}
           >
-            {showRight && (
-              <div style={{ position:"absolute", top:"28px", left:"24px", border:"3px solid #4CAF50", borderRadius:"8px", padding:"5px 12px", color:"#4CAF50", fontSize:"17px", fontWeight:"700", opacity:Math.min(drag.x/120,1), transform:"rotate(-12deg)", zIndex:10 }}>ADD</div>
-            )}
-            {showLeft && (
-              <div style={{ position:"absolute", top:"28px", right:"24px", border:"3px solid #ef5350", borderRadius:"8px", padding:"5px 12px", color:"#ef5350", fontSize:"17px", fontWeight:"700", opacity:Math.min(-drag.x/120,1), transform:"rotate(12deg)", zIndex:10 }}>SKIP</div>
-            )}
+            {showRight && <div style={{ position:"absolute", top:"28px", left:"24px", border:"3px solid #4CAF50", borderRadius:"8px", padding:"5px 12px", color:"#4CAF50", fontSize:"17px", fontWeight:"700", opacity:Math.min(drag.x/120,1), transform:"rotate(-12deg)", zIndex:10 }}>ADD</div>}
+            {showLeft && <div style={{ position:"absolute", top:"28px", right:"24px", border:"3px solid #ef5350", borderRadius:"8px", padding:"5px 12px", color:"#ef5350", fontSize:"17px", fontWeight:"700", opacity:Math.min(-drag.x/120,1), transform:"rotate(12deg)", zIndex:10 }}>SKIP</div>}
 
             {fetching && (
               <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", borderRadius:"24px", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:"10px", color:"#fff", fontSize:"14px", zIndex:20 }}>
@@ -276,12 +249,10 @@ export default function DiscoverView() {
         )}
       </div>
 
-      {/* Toast */}
       {toast && (
         <div style={{ position:"fixed", bottom:"100px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 22px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>{toast}</div>
       )}
 
-      {/* Action buttons */}
       {top && (
         <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"12px 24px 16px", flexShrink:0 }}>
           <button onClick={() => dismiss("left")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 2px 12px rgba(0,0,0,0.1)" }}>
