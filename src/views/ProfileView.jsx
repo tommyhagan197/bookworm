@@ -1,101 +1,111 @@
-import { useState, useEffect } from 'react';
-import { dbGetAll, dbClear, STORE_BOOKS, STORE_PAGES } from '../db/index.js';
-
-const FONT_SIZES = [14, 16, 18, 20, 23];
-const FONT_LABELS = ['Small', 'Medium', 'Standard', 'Large', 'X-Large'];
-
-export default function ProfileView({ theme, fontSizeIndex, pageAnimEnabled, onSetTheme, onAdjustFont, onToggleAnim, onShowConfirm, onShowToast }) {
-  const [stats, setStats] = useState({ books: 0, pages: 0, storage: '0 MB', storagePct: 0 });
-
-  async function loadStats() {
-    const books = await dbGetAll(STORE_BOOKS);
-    const allPages = await dbGetAll(STORE_PAGES);
-    const bytes = allPages.reduce((s,p) => s+((p.html?.length||0)*2), 0);
-    const mb = (bytes/1024/1024).toFixed(1);
-    setStats({
-      books: books.length,
-      pages: books.reduce((s,b) => s+(b.currentPage||0), 0).toLocaleString(),
-      storage: mb + ' MB',
-      storagePct: Math.min(100, (bytes/(50*1024*1024))*100)
-    });
-  }
-
-  useEffect(() => { loadStats(); }, []);
-
-  function handleClearLibrary() {
-    onShowConfirm('Clear Library?', 'This will delete all books and reading progress. Cannot be undone.', 'Delete Everything', async () => {
-      await dbClear(STORE_BOOKS);
-      await dbClear(STORE_PAGES);
-      if (window.__reloadLibrary) window.__reloadLibrary();
-      loadStats();
-      onShowToast('Library cleared');
-    });
-  }
-
+export default function ProfileView() {
   return (
-    <div id="profile-view" className="view active">
-      <div className="view-header">
-        <h1>Profile</h1>
+    <div className="view-container">
+      <h1 className="view-header">Profile</h1>
+      <p className="view-subhead">Your reading life.</p>
+
+      <div className="profile-card">
+        <div className="profile-avatar">📖</div>
+        <div>
+          <div className="profile-name">Reader</div>
+          <div className="profile-since">Member since 2026</div>
+        </div>
       </div>
-      <div className="scroll-content">
-        <div className="profile-header">
-          <div className="profile-avatar">B</div>
-          <div>
-            <div className="profile-name">Reader</div>
-            <div className="profile-sub">BookWorm member</div>
-          </div>
-        </div>
 
-        <div className="stats-grid">
-          <div className="stat-card"><div className="stat-value">{stats.books}</div><div className="stat-label">Books</div></div>
-          <div className="stat-card"><div className="stat-value">{stats.pages}</div><div className="stat-label">Pages Read</div></div>
-          <div className="stat-card"><div className="stat-value">{stats.storage}</div><div className="stat-label">Storage</div></div>
-        </div>
-
-        <div className="section-card">
-          <div className="section-header">Appearance</div>
-          <div className="setting-row" style={{cursor:'default'}}>
-            <span className="setting-label">Theme</span>
+      <div className="profile-stats">
+        {[
+          { label: "Books Read", value: "—" },
+          { label: "This Year", value: "—" },
+          { label: "Pages", value: "—" },
+        ].map(({ label, value }) => (
+          <div key={label} className="profile-stat">
+            <span className="profile-stat-value">{value}</span>
+            <span className="profile-stat-label">{label}</span>
           </div>
-          <div className="theme-picker">
-            {['sepia','light','dark'].map(t => (
-              <button key={t} className={`theme-btn ${t}${theme === t ? ' active' : ''}`} onClick={() => onSetTheme(t)}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="setting-row" style={{cursor:'default'}}>
-            <span className="setting-label">Font Size</span>
-            <span className="setting-value">{FONT_SIZES[fontSizeIndex]}px</span>
-          </div>
-          <div className="font-size-row">
-            <button className="font-size-btn" onClick={() => onAdjustFont(-1)}>A−</button>
-            <div className="font-size-display">{FONT_LABELS[fontSizeIndex]}</div>
-            <button className="font-size-btn" onClick={() => onAdjustFont(1)}>A+</button>
-          </div>
-          <div className="setting-row" onClick={onToggleAnim} style={{cursor:'pointer'}}>
-            <span className="setting-label">Page Turn Animation</span>
-            <div className={`toggle-track${pageAnimEnabled ? ' on' : ''}`}>
-              <div className="toggle-thumb" />
-            </div>
-          </div>
-        </div>
-
-        <div className="section-card">
-          <div className="section-header">Storage</div>
-          <div className="storage-inner">
-            <div className="storage-row">
-              <span>Books stored on device</span>
-              <span>{stats.storage}</span>
-            </div>
-            <div className="storage-bar-track">
-              <div className="storage-bar-fill" style={{width: `${stats.storagePct}%`}} />
-            </div>
-          </div>
-        </div>
-
-        <button className="danger-btn" onClick={handleClearLibrary}>Clear Library</button>
+        ))}
       </div>
+
+      <div className="profile-section-label">Account</div>
+      {["Sign In / Create Account", "Reading Preferences", "Appearance"].map((item) => (
+        <div key={item} className="profile-row">
+          <span>{item}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </div>
+      ))}
+
+      <style>{`
+        .profile-card {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          background: var(--surface);
+          border-radius: 14px;
+          padding: 18px 16px;
+          margin-bottom: 20px;
+          border: 1px solid rgba(139,111,71,0.12);
+        }
+        .profile-avatar {
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background: rgba(139,111,71,0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          flex-shrink: 0;
+        }
+        .profile-name { font-family: Georgia, serif; font-size: 18px; color: var(--text); }
+        .profile-since { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .profile-stats {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-bottom: 28px;
+        }
+        .profile-stat {
+          background: var(--surface);
+          border-radius: 12px;
+          padding: 14px 10px;
+          text-align: center;
+          border: 1px solid rgba(139,111,71,0.12);
+        }
+        .profile-stat-value {
+          display: block;
+          font-family: Georgia, serif;
+          font-size: 22px;
+          color: var(--accent);
+        }
+        .profile-stat-label {
+          display: block;
+          font-size: 10px;
+          color: var(--text-muted);
+          margin-top: 2px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .profile-section-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+        }
+        .profile-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 14px 0;
+          border-bottom: 1px solid rgba(139,111,71,0.1);
+          font-size: 15px;
+          color: var(--text);
+          cursor: pointer;
+        }
+        .profile-row:last-child { border-bottom: none; }
+        .profile-row svg { color: var(--text-muted); }
+      `}</style>
     </div>
   );
 }
