@@ -57,7 +57,7 @@ export default function ShelfView({ onOpenBook }) {
       <p className="view-subhead">{books.length} {books.length === 1 ? "book" : "books"}</p>
       <div className="shelf-grid">
         {books.map((book) => {
-          const bg = coverColor(book.id);
+          const bg = book.color || coverColor(book.id);
           const progress = book.progress || 0;
           return (
             <button

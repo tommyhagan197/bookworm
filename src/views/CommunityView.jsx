@@ -1,10 +1,17 @@
 import { useState } from "react";
 
+const CLUB_ICONS = {
+  1: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  2: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>,
+  3: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
+  4: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+};
+
 const MOCK_CLUBS = [
-  { id: 1, name: "Victorian Classics", members: 142, currentBook: "Middlemarch", emoji: "🏛️", genre: "Literary Fiction" },
-  { id: 2, name: "Sci-Fi Explorers",   members: 89,  currentBook: "The Time Machine", emoji: "🚀", genre: "Science Fiction" },
-  { id: 3, name: "Philosophy Circle",  members: 67,  currentBook: "Thus Spoke Zarathustra", emoji: "🦁", genre: "Philosophy" },
-  { id: 4, name: "Mystery & Noir",     members: 54,  currentBook: "The Moonstone", emoji: "🔍", genre: "Mystery" },
+  { id: 1, name: "Victorian Classics", members: 142, currentBook: "Middlemarch", genre: "Literary Fiction" },
+  { id: 2, name: "Sci-Fi Explorers",   members: 89,  currentBook: "The Time Machine", genre: "Science Fiction" },
+  { id: 3, name: "Philosophy Circle",  members: 67,  currentBook: "Thus Spoke Zarathustra", genre: "Philosophy" },
+  { id: 4, name: "Mystery & Noir",     members: 54,  currentBook: "The Moonstone", genre: "Mystery" },
 ];
 
 const MOCK_FRIENDS = [
@@ -37,7 +44,7 @@ export default function CommunityView() {
           <div className="clubs-list">
             {MOCK_CLUBS.map(club => (
               <div key={club.id} className="club-card">
-                <div className="club-emoji">{club.emoji}</div>
+                <div className="club-emoji">{CLUB_ICONS[club.id]}</div>
                 <div className="club-info">
                   <div className="club-name">{club.name}</div>
                   <div className="club-genre">{club.genre}</div>
