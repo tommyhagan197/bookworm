@@ -19,18 +19,80 @@ const STORIES = [
 const GENRES = ["All","Literary Fiction","Mystery","Romance"];
 const SWIPE_THRESHOLD = 75;
 
+async function fetchAndSave(story) {
+  const proxyUrl = `${PROXY}/${encodeURIComponent(story.gutenbergUrl)}`;
+  const res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const raw = await res.text();
+
+  // Strip Gutenberg header and footer
+  const startIdx = raw.indexOf("*** START OF");
+  const endIdx = raw.indexOf("*** END OF");
+  const begin = startIdx !== -1 ? raw.indexOf("\n", startIdx) + 1 : 0;
+  const end = endIdx !== -1 ? endIdx : raw.length;
+  const text = raw.slice(begin, end);
+
+  // Split into paragraphs — join single-newline lines first, then split on blank lines
+  const paragraphs = text
+    .split(/\r?\n\r?\n+/)
+    .map(block => block.replace(/\r?\n/g, " ").trim())
+    .filter(p => p.length > 0);
+
+  // Paginate
+  const wordsPerPage = Math.round((window.innerHeight / 22) * 10);
+  const titlePage = [
+    { html: story.title, isHeading: true },
+    { html: "by " + story.author, isHeading: false },
+  ];
+  const pages = [titlePage];
+  let current = [];
+  let wordCount = 0;
+
+  for (const para of paragraphs) {
+    const words = para.split(/\s+/).length;
+    if (wordCount + words > wordsPerPage && current.length > 0) {
+      pages.push([...current]);
+      current = [];
+      wordCount = 0;
+    }
+    current.push({ html: `<p>${para}</p>`, isHeading: false });
+    wordCount += words;
+  }
+  if (current.length > 0) pages.push([...current]);
+
+  // Save book record
+  await dbPut("books", {
+    id: story.id,
+    title: story.title,
+    author: story.author,
+    totalPages: pages.length,
+    progress: 0,
+    currentPage: 0,
+    addedAt: Date.now(),
+    color: story.color,
+    isShortStory: true,
+  });
+
+  // Save pages
+  for (let i = 0; i < pages.length; i++) {
+    await dbPut("pages", { key: story.id + ":" + i, content: pages[i] });
+  }
+
+  return pages.length;
+}
+
 export default function DiscoverView() {
   const [genre, setGenre] = useState("All");
   const [deck, setDeck] = useState(null);
   const [seen, setSeen] = useState({});
   const [flipped, setFlipped] = useState(false);
-  const [drag, setDrag] = useState({ active:false, x:0, y:0 });
+  const [drag, setDrag] = useState({ active: false, x: 0, y: 0 });
   const [flyOff, setFlyOff] = useState(null);
   const [toast, setToast] = useState(null);
-  const [saved, setSaved] = useState({});
   const [fetching, setFetching] = useState(false);
-  const startPos = useRef({ x:0, y:0 });
+  const startPos = useRef({ x: 0, y: 0 });
   const moved = useRef(false);
+  const saved = useRef({});
 
   useEffect(() => {
     async function loadSeen() {
@@ -53,77 +115,20 @@ export default function DiscoverView() {
     setFlyOff(null);
   }
 
-  if (deck === null) return <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text-muted)", fontSize:"14px" }}>Loading…</div>;
-
-  const top = deck[0];
-  const next = deck[1];
-
   function showToast(msg) {
     setToast(msg);
-    setTimeout(() => setToast(null), 2000);
-  }
-
-  async function fetchAndSave(story) {
-    const proxyUrl = `${PROXY}/${encodeURIComponent(story.gutenbergUrl)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.text();
-
-    const startIdx = raw.indexOf("*** START OF");
-    const endIdx = raw.indexOf("*** END OF");
-    const begin = startIdx !== -1 ? raw.indexOf("\n", startIdx) + 1 : 0;
-    const end = endIdx !== -1 ? endIdx : raw.length;
-    const text = raw.slice(begin, end);
-
-    const paragraphs = text
-      .split(/\n\n+/)
-      .map(p => p.replace(/\n/g, " ").trim())
-      .filter(p => p.length > 30 && !p.toUpperCase().startsWith("CHAPTER"));
-
-    const wordsPerPage = Math.round((window.innerHeight / 22) * 12);
-    const pages = [[{ html: story.title, isHeading: true }, { html: "by " + story.author, isHeading: false }]];
-    let current = [];
-    let wordCount = 0;
-
-    for (const para of paragraphs) {
-      const words = para.split(" ").length;
-      if (wordCount + words > wordsPerPage && current.length > 0) {
-        pages.push([...current]);
-        current = [];
-        wordCount = 0;
-      }
-      current.push({ html: `<p>${para}</p>`, isHeading: false });
-      wordCount += words;
-    }
-    if (current.length > 0) pages.push(current);
-
-    await dbPut("books", {
-      id: story.id,
-      title: story.title,
-      author: story.author,
-      totalPages: pages.length,
-      progress: 0,
-      currentPage: 0,
-      addedAt: Date.now(),
-      color: story.color,
-      isShortStory: true,
-    });
-
-    for (let i = 0; i < pages.length; i++) {
-      await dbPut("pages", { key: story.id + ":" + i, content: pages[i] });
-    }
+    setTimeout(() => setToast(null), 2500);
   }
 
   async function dismiss(direction) {
-    if (!top || fetching) return;
+    if (!top || fetching || flyOff) return;
 
-    if (direction === "right" && !saved[top.id]) {
+    if (direction === "right" && !saved.current[top.id]) {
       setFetching(true);
-      showToast("Fetching full text…");
       try {
-        await fetchAndSave(top);
-        setSaved(s => ({ ...s, [top.id]: true }));
-        showToast("Added to shelf");
+        const pageCount = await fetchAndSave(top);
+        saved.current[top.id] = true;
+        showToast(`Added — ${pageCount} pages`);
       } catch(e) {
         showToast("Could not fetch — check connection");
         setFetching(false);
@@ -134,16 +139,22 @@ export default function DiscoverView() {
       showToast("Skipped");
     }
 
+    // Mark seen
     const newSeen = { ...seen, [top.id]: true };
     setSeen(newSeen);
     try { await dbPut("settings", { id: "discover_seen", value: newSeen }); } catch(e) {}
 
-    setFlyOff(direction);
+    // Animate card away
     setFlipped(false);
-    setTimeout(() => { setDeck(d => d.slice(1)); setFlyOff(null); }, 380);
+    setFlyOff(direction);
+    setTimeout(() => {
+      setDeck(d => d.slice(1));
+      setFlyOff(null);
+    }, 380);
   }
 
   function onTouchStart(e) {
+    if (fetching) return;
     const t = e.touches[0];
     startPos.current = { x: t.clientX, y: t.clientY };
     moved.current = false;
@@ -151,14 +162,16 @@ export default function DiscoverView() {
   }
 
   function onTouchMove(e) {
+    if (!drag.active) return;
     const t = e.touches[0];
     const dx = t.clientX - startPos.current.x;
     const dy = t.clientY - startPos.current.y;
-    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved.current = true;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved.current = true;
     setDrag({ active: true, x: dx, y: dy });
   }
 
   function onTouchEnd() {
+    if (!drag.active) return;
     const dx = drag.x;
     setDrag({ active: false, x: 0, y: 0 });
     if (!moved.current) { setFlipped(f => !f); return; }
@@ -166,41 +179,58 @@ export default function DiscoverView() {
     if (dx < -SWIPE_THRESHOLD) { dismiss("left"); return; }
   }
 
+  if (deck === null) return (
+    <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--text-muted)", fontSize:"14px" }}>
+      Loading…
+    </div>
+  );
+
+  const top = deck[0];
+  const next = deck[1];
   const rotate = drag.active ? drag.x * 0.07 : 0;
   const tx = flyOff === "right" ? 650 : flyOff === "left" ? -650 : drag.active ? drag.x : 0;
-  const ty = drag.active ? drag.y * 0.25 : 0;
+  const ty = drag.active ? drag.y * 0.2 : 0;
   const showRight = drag.active && drag.x > 35;
   const showLeft = drag.active && drag.x < -35;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
-      <div style={{ display:"flex", gap:"8px", padding:"14px 16px 10px", overflowX:"auto", flexShrink:0, scrollbarWidth:"none", WebkitOverflowScrolling:"touch" }}>
+      {/* Genre pills */}
+      <div style={{ display:"flex", gap:"8px", padding:"14px 16px 10px", overflowX:"auto", flexShrink:0, scrollbarWidth:"none" }}>
         {GENRES.map(g => (
           <button key={g} onClick={() => handleGenre(g)} style={{
-            flexShrink:0,
-            background: genre===g ? "var(--accent)" : "var(--surface)",
-            color: genre===g ? "#fff" : "var(--text)",
-            border: genre===g ? "none" : "1px solid rgba(224,124,58,0.2)",
-            borderRadius:"20px", padding:"7px 16px", fontSize:"13px",
-            cursor:"pointer", WebkitTapHighlightColor:"transparent", transition:"all 0.15s",
+            flexShrink: 0,
+            background: genre === g ? "var(--accent)" : "var(--surface)",
+            color: genre === g ? "#fff" : "var(--text)",
+            border: genre === g ? "none" : "1px solid rgba(224,124,58,0.2)",
+            borderRadius: "20px", padding: "7px 16px", fontSize: "13px",
+            cursor: "pointer", WebkitTapHighlightColor: "transparent",
           }}>{g}</button>
         ))}
       </div>
 
-      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", padding:"0 20px", minHeight:0 }}>
+      {/* Card area */}
+      <div style={{ flex:1, position:"relative", margin:"0 20px", minHeight:0 }}>
 
         {deck.length === 0 && (
-          <div style={{ textAlign:"center", color:"var(--text-muted)", padding:"40px 24px" }}>
-            <div style={{ fontSize:"17px", fontFamily:"Georgia, serif", marginBottom:"8px" }}>You have seen them all</div>
-            <div style={{ fontSize:"13px" }}>Change the genre filter or check your shelf</div>
+          <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", color:"var(--text-muted)", textAlign:"center", gap:"8px" }}>
+            <div style={{ fontSize:"17px", fontFamily:"Georgia, serif" }}>You've seen them all</div>
+            <div style={{ fontSize:"13px" }}>Change the filter or check your shelf</div>
           </div>
         )}
 
+        {/* Back card */}
         {next && (
-          <div style={{ position:"absolute", inset:0, borderRadius:"24px", background:next.color, transform:"scale(0.95) translateY(10px)", boxShadow:"0 8px 32px rgba(0,0,0,0.15)" }} />
+          <div style={{
+            position:"absolute", inset:0,
+            borderRadius:"24px", background:next.color,
+            transform:"scale(0.95) translateY(12px)",
+            boxShadow:"0 8px 32px rgba(0,0,0,0.15)",
+          }} />
         )}
 
+        {/* Top card */}
         {top && (
           <div
             onTouchStart={onTouchStart}
@@ -211,57 +241,76 @@ export default function DiscoverView() {
               borderRadius:"24px", background:top.color,
               userSelect:"none", WebkitUserSelect:"none",
               transform:`translate(${tx}px,${ty}px) rotate(${rotate}deg)`,
-              transition: drag.active ? "none" : flyOff ? "transform 0.38s cubic-bezier(0.55,0,1,0.45)" : "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+              transition: drag.active ? "none" : flyOff ? "transform 0.35s cubic-bezier(0.55,0,1,0.45), opacity 0.35s" : "transform 0.25s ease",
+              opacity: flyOff ? 0 : 1,
               boxShadow:"0 16px 48px rgba(0,0,0,0.22)",
               overflow:"hidden", touchAction:"none",
             }}
           >
-            {showRight && <div style={{ position:"absolute", top:"28px", left:"24px", border:"3px solid #4CAF50", borderRadius:"8px", padding:"5px 12px", color:"#4CAF50", fontSize:"17px", fontWeight:"700", opacity:Math.min(drag.x/120,1), transform:"rotate(-12deg)", zIndex:10 }}>ADD</div>}
-            {showLeft && <div style={{ position:"absolute", top:"28px", right:"24px", border:"3px solid #ef5350", borderRadius:"8px", padding:"5px 12px", color:"#ef5350", fontSize:"17px", fontWeight:"700", opacity:Math.min(-drag.x/120,1), transform:"rotate(12deg)", zIndex:10 }}>SKIP</div>}
+            {/* Swipe indicators */}
+            {showRight && <div style={{ position:"absolute", top:"24px", left:"20px", border:"3px solid #4CAF50", borderRadius:"8px", padding:"4px 10px", color:"#4CAF50", fontSize:"16px", fontWeight:"700", opacity:Math.min(drag.x/100,1), transform:"rotate(-12deg)", zIndex:10 }}>ADD</div>}
+            {showLeft && <div style={{ position:"absolute", top:"24px", right:"20px", border:"3px solid #ef5350", borderRadius:"8px", padding:"4px 10px", color:"#ef5350", fontSize:"16px", fontWeight:"700", opacity:Math.min(-drag.x/100,1), transform:"rotate(12deg)", zIndex:10 }}>SKIP</div>}
 
+            {/* Fetch loading overlay */}
             {fetching && (
-              <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.5)", borderRadius:"24px", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:"10px", color:"#fff", fontSize:"14px", zIndex:20 }}>
-                <div style={{ fontSize:"28px" }}>📖</div>
-                Fetching full text…
+              <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"12px", zIndex:20, borderRadius:"24px" }}>
+                <div style={{ fontSize:"32px" }}>📖</div>
+                <div style={{ color:"#fff", fontSize:"15px" }}>Fetching full text…</div>
               </div>
             )}
 
+            {/* Card front */}
             {!flipped ? (
               <div style={{ height:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"28px" }}>
-                <div style={{ marginBottom:"12px", display:"flex", gap:"8px", flexWrap:"wrap" }}>
-                  <span style={{ background:"rgba(255,255,255,0.18)", color:"#fff", fontSize:"11px", padding:"4px 12px", borderRadius:"20px", letterSpacing:"0.06em", textTransform:"uppercase" }}>{top.genre}</span>
-                  <span style={{ background:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.7)", fontSize:"11px", padding:"4px 12px", borderRadius:"20px" }}>{top.type}</span>
+                <div style={{ display:"flex", gap:"8px", marginBottom:"14px", flexWrap:"wrap" }}>
+                  <span style={{ background:"rgba(255,255,255,0.2)", color:"#fff", fontSize:"11px", padding:"4px 12px", borderRadius:"20px", letterSpacing:"0.06em", textTransform:"uppercase" }}>{top.genre}</span>
+                  <span style={{ background:"rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.75)", fontSize:"11px", padding:"4px 12px", borderRadius:"20px" }}>{top.type}</span>
                 </div>
-                <div style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal", lineHeight:1.2, marginBottom:"6px" }}>{top.title}</div>
-                <div style={{ fontSize:"14px", color:"rgba(255,255,255,0.65)", marginBottom:"16px" }}>{top.author} · {top.year}</div>
-                <div style={{ fontSize:"15px", color:"rgba(255,255,255,0.88)", lineHeight:1.6, fontStyle:"italic" }}>"{top.hook}"</div>
-                <div style={{ marginTop:"20px", fontSize:"12px", color:"rgba(255,255,255,0.38)", textAlign:"center" }}>Tap to preview · Swipe to decide</div>
+                <div style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", lineHeight:1.2, marginBottom:"6px" }}>{top.title}</div>
+                <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.6)", marginBottom:"18px" }}>{top.author} · {top.year}</div>
+                <div style={{ fontSize:"15px", color:"rgba(255,255,255,0.9)", lineHeight:1.65, fontFamily:"Georgia, serif", fontStyle:"italic" }}>"{top.hook}"</div>
+                <div style={{ marginTop:"24px", fontSize:"12px", color:"rgba(255,255,255,0.35)", textAlign:"center" }}>Tap to preview · Swipe to decide</div>
               </div>
             ) : (
-              <div style={{ height:"100%", display:"flex", flexDirection:"column", padding:"28px", background:"rgba(0,0,0,0.42)", borderRadius:"24px" }}>
-                <div style={{ fontFamily:"Georgia, serif", fontSize:"18px", color:"#fff", lineHeight:1.3, marginBottom:"4px" }}>{top.title}</div>
-                <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.55)", marginBottom:"20px" }}>{top.author}</div>
-                <div style={{ flex:1, fontSize:"16px", color:"rgba(255,255,255,0.92)", lineHeight:1.75, fontFamily:"Georgia, serif", fontStyle:"italic", overflowY:"auto" }}>{top.hook}</div>
-                <div style={{ marginTop:"16px", fontSize:"12px", color:"rgba(255,255,255,0.38)", textAlign:"center" }}>Tap to flip back</div>
+              <div style={{ height:"100%", display:"flex", flexDirection:"column", padding:"28px", background:"rgba(0,0,0,0.45)", borderRadius:"24px" }}>
+                <div style={{ fontFamily:"Georgia, serif", fontSize:"17px", color:"#fff", lineHeight:1.3, marginBottom:"4px" }}>{top.title}</div>
+                <div style={{ fontSize:"13px", color:"rgba(255,255,255,0.5)", marginBottom:"20px" }}>{top.author}</div>
+                <div style={{ flex:1, fontSize:"15px", color:"rgba(255,255,255,0.9)", lineHeight:1.75, fontFamily:"Georgia, serif", fontStyle:"italic", overflowY:"auto" }}>{top.hook}</div>
+                <div style={{ marginTop:"16px", fontSize:"12px", color:"rgba(255,255,255,0.35)", textAlign:"center" }}>Tap to flip back</div>
               </div>
             )}
           </div>
         )}
       </div>
 
+      {/* Toast */}
       {toast && (
-        <div style={{ position:"fixed", bottom:"100px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 22px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>{toast}</div>
+        <div style={{ position:"fixed", bottom:"110px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 20px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>
+          {toast}
+        </div>
       )}
 
+      {/* Action buttons */}
       {top && (
-        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"12px 24px 16px", flexShrink:0 }}>
-          <button onClick={() => dismiss("left")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 2px 12px rgba(0,0,0,0.1)" }}>
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"14px 24px 18px", flexShrink:0 }}>
+          <button
+            onClick={() => dismiss("left")}
+            disabled={fetching}
+            style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--surface)", border:"2px solid #ef5350", color:"#ef5350", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", opacity: fetching ? 0.4 : 1 }}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width:"20px", height:"20px" }}><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-          <button onClick={() => setFlipped(f => !f)} style={{ width:"46px", height:"46px", borderRadius:"50%", background:"var(--surface)", border:"1.5px solid rgba(224,124,58,0.25)", color:"var(--text-muted)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent" }}>
+          <button
+            onClick={() => !fetching && setFlipped(f => !f)}
+            style={{ width:"46px", height:"46px", borderRadius:"50%", background:"var(--surface)", border:"1.5px solid rgba(224,124,58,0.25)", color:"var(--text-muted)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", opacity: fetching ? 0.4 : 1 }}
+          >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width:"18px", height:"18px" }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
-          <button onClick={() => dismiss("right")} style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--accent)", border:"none", color:"#fff", fontSize:"24px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 4px 20px rgba(224,124,58,0.45)" }}>+</button>
+          <button
+            onClick={() => dismiss("right")}
+            disabled={fetching}
+            style={{ width:"58px", height:"58px", borderRadius:"50%", background:"var(--accent)", border:"none", color:"#fff", fontSize:"24px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", WebkitTapHighlightColor:"transparent", boxShadow:"0 4px 20px rgba(224,124,58,0.45)", opacity: fetching ? 0.6 : 1 }}
+          >+</button>
         </div>
       )}
     </div>
