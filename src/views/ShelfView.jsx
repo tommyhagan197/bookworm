@@ -1,30 +1,28 @@
 import { useState, useEffect } from "react";
+import { openDB } from "../db/idb";
 
-const DB_NAME = "bookworm";
-const DB_VERSION = 3;
+// Brand palette — 8 distinct cover colors from the BookWorm brand guide
+const COVER_COLORS = [
+  { bg: "#6B5344", label: "Walnut" },
+  { bg: "#4A6741", label: "Moss" },
+  { bg: "#2D5A7B", label: "Ink" },
+  { bg: "#7B4A6B", label: "Foxglove" },
+  { bg: "#8B6234", label: "Mustard" },
+  { bg: "#3D6B6B", label: "Teal" },
+  { bg: "#704214", label: "Leather" },
+  { bg: "#4A5A7B", label: "Slate" },
+];
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-    req.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains("books"))
-        db.createObjectStore("books", { keyPath: "id" });
-      if (!db.objectStoreNames.contains("pages"))
-        db.createObjectStore("pages", { keyPath: "key" });
-      if (!db.objectStoreNames.contains("settings"))
-        db.createObjectStore("settings", { keyPath: "id" });
-    };
-  });
+function coverColor(bookId) {
+  // Use the unique part of the bookId (the random suffix) to pick color
+  const hash = bookId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return COVER_COLORS[hash % COVER_COLORS.length].bg;
 }
 
 async function getAllBooks() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction("books", "readonly");
-    const req = tx.objectStore("books").getAll();
+    const req = db.transaction("books", "readonly").objectStore("books").getAll();
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
@@ -34,7 +32,7 @@ export default function ShelfView({ onOpenBook }) {
   const [books, setBooks] = useState([]);
 
   useEffect(() => {
-    getAllBooks().then(setBooks).catch(console.error);
+    getAllBooks().then(b => setBooks(b.sort((a, z) => z.addedAt - a.addedAt))).catch(console.error);
   }, []);
 
   if (books.length === 0) {
@@ -58,27 +56,31 @@ export default function ShelfView({ onOpenBook }) {
       <h1 className="view-header">Your Shelf</h1>
       <p className="view-subhead">{books.length} {books.length === 1 ? "book" : "books"}</p>
       <div className="shelf-grid">
-        {books.map((book) => (
-          <button
-            key={book.id}
-            className="shelf-card"
-            onClick={() => onOpenBook && onOpenBook(book.id)}
-          >
-            <div className="shelf-cover">
-              <span className="shelf-cover-title">{book.title}</span>
-              {book.author && <span className="shelf-cover-author">{book.author}</span>}
-            </div>
-            <div className="shelf-meta">
-              <span className="shelf-title">{book.title}</span>
-              {book.author && <span className="shelf-author">{book.author}</span>}
-              {book.progress > 0 && (
-                <div className="shelf-progress-bar">
-                  <div className="shelf-progress-fill" style={{ width: Math.round(book.progress * 100) + "%" }} />
-                </div>
-              )}
-            </div>
-          </button>
-        ))}
+        {books.map((book) => {
+          const bg = coverColor(book.id);
+          const progress = book.progress || 0;
+          return (
+            <button
+              key={book.id}
+              className="shelf-card"
+              onClick={() => onOpenBook && onOpenBook(book.id)}
+            >
+              <div className="shelf-cover" style={{ background: bg }}>
+                <span className="shelf-cover-title">{book.title}</span>
+                {book.author && <span className="shelf-cover-author">{book.author}</span>}
+              </div>
+              <div className="shelf-meta">
+                <span className="shelf-title">{book.title}</span>
+                {book.author && <span className="shelf-author">{book.author}</span>}
+                {progress > 0 && (
+                  <div className="shelf-progress-bar">
+                    <div className="shelf-progress-fill" style={{ width: Math.round(progress * 100) + "%" }} />
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       <style>{`
@@ -94,23 +96,24 @@ export default function ShelfView({ onOpenBook }) {
           text-align: left;
           padding: 0;
           -webkit-tap-highlight-color: transparent;
+          width: 100%;
         }
         .shelf-cover {
+          width: 100%;
           aspect-ratio: 2/3;
-          background: var(--accent);
           border-radius: 6px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           padding: 10px 8px;
-          box-shadow: 3px 4px 12px rgba(0,0,0,0.18);
+          box-shadow: 3px 4px 12px rgba(0,0,0,0.22);
           overflow: hidden;
           margin-bottom: 8px;
         }
         .shelf-cover-title {
           font-family: Georgia, serif;
-          font-size: 11px;
+          font-size: 10px;
           color: rgba(255,255,255,0.95);
           text-align: center;
           line-height: 1.3;
@@ -120,10 +123,10 @@ export default function ShelfView({ onOpenBook }) {
           overflow: hidden;
         }
         .shelf-cover-author {
-          font-size: 9px;
-          color: rgba(255,255,255,0.65);
+          font-size: 8px;
+          color: rgba(255,255,255,0.6);
           text-align: center;
-          margin-top: 4px;
+          margin-top: 5px;
         }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
         .shelf-title {
@@ -145,7 +148,7 @@ export default function ShelfView({ onOpenBook }) {
           height: 2px;
           background: rgba(139,111,71,0.2);
           border-radius: 2px;
-          margin-top: 4px;
+          margin-top: 5px;
           overflow: hidden;
         }
         .shelf-progress-fill {

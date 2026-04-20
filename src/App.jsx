@@ -4,21 +4,29 @@ import ShelfView from "./views/ShelfView";
 import DiscoverView from "./views/DiscoverView";
 import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
+import ReaderView from "./views/ReaderView";
 import "./App.css";
-
-const TABS = ["shelf", "library", "discover", "community", "profile"];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("library");
+  const [readerBookId, setReaderBookId] = useState(null);
+
+  function openBook(bookId) {
+    setReaderBookId(bookId);
+  }
+
+  function closeReader() {
+    setReaderBookId(null);
+  }
 
   function renderTab() {
     switch (activeTab) {
-      case "shelf":      return <ShelfView />;
-      case "library":   return <BrowseView />;
+      case "shelf":     return <ShelfView onOpenBook={openBook} />;
+      case "library":   return <BrowseView onOpenBook={openBook} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;
       case "profile":   return <ProfileView />;
-      default:          return <BrowseView />;
+      default:          return <BrowseView onOpenBook={openBook} />;
     }
   }
 
@@ -50,7 +58,6 @@ export default function App() {
           <span>Library</span>
         </button>
 
-        {/* Elevated center Discover button */}
         <div className="nav-center-slot">
           <button
             className={"nav-center-btn" + (activeTab === "discover" ? " active" : "")}
@@ -90,6 +97,11 @@ export default function App() {
           <span>Profile</span>
         </button>
       </nav>
+
+      {/* Reader overlay — mounts on top of everything when a book is open */}
+      {readerBookId && (
+        <ReaderView bookId={readerBookId} onClose={closeReader} />
+      )}
     </div>
   );
 }
