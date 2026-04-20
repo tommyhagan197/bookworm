@@ -1,20 +1,13 @@
 import { useState, useEffect } from "react";
 import { openDB } from "../db/idb";
 
-// Brand palette — 8 distinct cover colors from the BookWorm brand guide
 const COVER_COLORS = [
-  { bg: "#6B5344", label: "Walnut" },
-  { bg: "#4A6741", label: "Moss" },
-  { bg: "#2D5A7B", label: "Ink" },
-  { bg: "#7B4A6B", label: "Foxglove" },
-  { bg: "#8B6234", label: "Mustard" },
-  { bg: "#3D6B6B", label: "Teal" },
-  { bg: "#704214", label: "Leather" },
-  { bg: "#4A5A7B", label: "Slate" },
+  { bg: "#6B5344" }, { bg: "#4A6741" }, { bg: "#2D5A7B" },
+  { bg: "#7B4A6B" }, { bg: "#8B6234" }, { bg: "#3D6B6B" },
+  { bg: "#704214" }, { bg: "#4A5A7B" },
 ];
 
 function coverColor(bookId) {
-  // Use the unique part of the bookId (the random suffix) to pick color
   const hash = bookId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return COVER_COLORS[hash % COVER_COLORS.length].bg;
 }
@@ -28,12 +21,43 @@ async function getAllBooks() {
   });
 }
 
+async function deleteBook(bookId) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(["books", "pages"], "readwrite");
+    tx.objectStore("books").delete(bookId);
+    const pageStore = tx.objectStore("pages");
+    const req = pageStore.openCursor();
+    req.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (cursor) {
+        if (cursor.key.startsWith(bookId + ":")) cursor.delete();
+        cursor.continue();
+      }
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 export default function ShelfView({ onOpenBook }) {
   const [books, setBooks] = useState([]);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const longPressTimer = { current: null };
 
   useEffect(() => {
     getAllBooks().then(b => setBooks(b.sort((a, z) => z.addedAt - a.addedAt))).catch(console.error);
   }, []);
+
+  function handleLongPress(book) {
+    setConfirmDelete(book);
+  }
+
+  async function handleDelete(book) {
+    await deleteBook(book.id);
+    setBooks(b => b.filter(x => x.id !== book.id));
+    setConfirmDelete(null);
+  }
 
   if (books.length === 0) {
     return (
@@ -59,10 +83,14 @@ export default function ShelfView({ onOpenBook }) {
         {books.map((book) => {
           const bg = book.color || coverColor(book.id);
           const progress = book.progress || 0;
+          let pressTimer = null;
           return (
             <button
               key={book.id}
               className="shelf-card"
+              onTouchStart={() => { pressTimer = setTimeout(() => handleLongPress(book), 600); }}
+              onTouchEnd={() => { clearTimeout(pressTimer); }}
+              onTouchMove={() => { clearTimeout(pressTimer); }}
               onClick={() => onOpenBook && onOpenBook(book.id)}
             >
               <div className="shelf-cover" style={{ background: bg }}>
@@ -83,11 +111,44 @@ export default function ShelfView({ onOpenBook }) {
         })}
       </div>
 
+      {confirmDelete && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+          zIndex: 100, padding: "0 0 40px",
+        }}>
+          <div style={{
+            background: "var(--surface)", borderRadius: "20px",
+            padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px",
+            textAlign: "center",
+          }}>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>
+              Remove "{confirmDelete.title}"?
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
+              This removes it from your shelf. You can re-add it anytime.
+            </div>
+            <button onClick={() => handleDelete(confirmDelete)} style={{
+              width: "100%", padding: "14px", borderRadius: "12px",
+              background: "#ef5350", border: "none", color: "#fff",
+              fontSize: "15px", fontWeight: "600", cursor: "pointer",
+              marginBottom: "10px",
+            }}>Remove</button>
+            <button onClick={() => setConfirmDelete(null)} style={{
+              width: "100%", padding: "14px", borderRadius: "12px",
+              background: "transparent", border: "none", color: "var(--text-muted)",
+              fontSize: "15px", cursor: "pointer",
+            }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .shelf-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
+          align-items: start;
         }
         .shelf-card {
           background: none;
