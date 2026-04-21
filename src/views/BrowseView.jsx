@@ -15,7 +15,7 @@ function coverColor(id) {
   return COVER_COLORS[Math.abs(id) % COVER_COLORS.length];
 }
 
-export default function BrowseView({ onOpenBook }) {
+export default function BrowseView({ onOpenBook, onOpenBible }) {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -134,6 +134,27 @@ export default function BrowseView({ onOpenBook }) {
       <h1 className="view-header">Free Classics</h1>
       <p className="view-subhead">70,000+ public domain books</p>
 
+      {/* Bible Featured Card */}
+      {onOpenBible && (
+        <div className="bible-featured-card" onClick={onOpenBible}>
+          <div className="bible-featured-left">
+            <div className="bible-featured-cross">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <rect x="8" y="1" width="4" height="18" rx="1.5" fill="white"/>
+                <rect x="1" y="7" width="18" height="4" rx="1.5" fill="white"/>
+              </svg>
+            </div>
+            <div>
+              <div className="bible-featured-title">Holy Bible</div>
+              <div className="bible-featured-sub">King James Version · Free</div>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 3l5 5-5 5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+
       {/* Search */}
       <div className="browse-search-wrap">
         <svg className="browse-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -202,6 +223,47 @@ export default function BrowseView({ onOpenBook }) {
       )}
 
       <style>{`
+
+        .bible-featured-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: linear-gradient(135deg, #3a2410 0%, #6b4423 100%);
+          border-radius: 14px;
+          padding: 16px 18px;
+          margin-bottom: 20px;
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          transition: opacity 0.15s;
+        }
+        .bible-featured-card:active { opacity: 0.85; }
+        .bible-featured-left {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+        .bible-featured-cross {
+          width: 40px;
+          height: 40px;
+          background: rgba(255,255,255,0.12);
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .bible-featured-title {
+          font-family: 'Lora', Georgia, serif;
+          font-size: 17px;
+          font-weight: 600;
+          color: white;
+          margin-bottom: 2px;
+        }
+        .bible-featured-sub {
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          font-family: 'DM Sans', sans-serif;
+        }
         .browse-search-wrap {
           position: relative;
           margin-bottom: 20px;
