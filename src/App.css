@@ -235,8 +235,8 @@ body {
 .bible-book-chevron{color:var(--text-muted);flex-shrink:0}
 
 /* ── CHAPTER GRID ── */
-.bible-chapter-grid{padding:20px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.bible-chapter-btn{aspect-ratio:1;background:var(--surface);border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:18px;font-weight:500;color:var(--text);cursor:pointer;transition:all 0.12s;width:100%}
+.bible-chapter-grid{padding:20px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;box-sizing:border-box}
+.bible-chapter-btn{aspect-ratio:1;background:var(--surface);border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:500;color:var(--text);cursor:pointer;transition:all 0.12s;width:100%;display:flex;align-items:center;justify-content:center}
 .bible-chapter-btn:active{background:var(--accent,#e07c2d);color:white;transform:scale(0.95)}
 
 /* ── BIBLE READER ── */
