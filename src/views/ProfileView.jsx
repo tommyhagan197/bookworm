@@ -38,6 +38,7 @@ export default function ProfileView({ onPublish, onOpenBook }) {
   const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
   const [works, setWorks] = useState([]);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
     getSetting("theme", "sepia").then(t => { setThemeState(t); applyTheme(t); });
@@ -48,6 +49,28 @@ export default function ProfileView({ onPublish, onOpenBook }) {
   async function loadWorks() {
     const all = await dbGetAll("books");
     setWorks(all.filter(b => b.type === "published"));
+  }
+
+  async function handleDeleteWork(work) {
+    const { openDB } = await import("../db/idb");
+    const db = await openDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(["books", "pages"], "readwrite");
+      tx.objectStore("books").delete(work.id);
+      const pageStore = tx.objectStore("pages");
+      const req = pageStore.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.key.startsWith(work.id + ":")) cursor.delete();
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    setWorks(w => w.filter(x => x.id !== work.id));
+    setConfirmDelete(null);
   }
 
   function applyTheme(t) {
@@ -262,39 +285,56 @@ export default function ProfileView({ onPublish, onOpenBook }) {
             gap: "2px",
             margin: "0 -20px",
           }}>
-            {works.map(work => (
-              <button
-                key={work.id}
-                onClick={() => onOpenBook && onOpenBook(work.id)}
-                style={{
-                  aspectRatio: "2/3",
-                  background: work.color || "var(--brand)",
-                  border: "none",
-                  cursor: "pointer",
-                  WebkitTapHighlightColor: "transparent",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "8px",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <span style={{
-                  fontFamily: "Georgia, serif",
-                  fontSize: "11px",
-                  color: "rgba(255,255,255,0.95)",
-                  textAlign: "center",
-                  lineHeight: 1.3,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}>{work.title}</span>
-              </button>
-            ))}
+            {works.map(work => {
+              let pressTimer = null;
+              return (
+                <button
+                  key={work.id}
+                  onTouchStart={() => { pressTimer = setTimeout(() => setConfirmDelete(work), 600); }}
+                  onTouchEnd={() => clearTimeout(pressTimer)}
+                  onTouchMove={() => clearTimeout(pressTimer)}
+                  onClick={() => onOpenBook && onOpenBook(work.id)}
+                  style={{
+                    aspectRatio: "2/3",
+                    background: work.color || "var(--brand)",
+                    border: "none",
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "8px",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span style={{
+                    fontFamily: "Georgia, serif",
+                    fontSize: "11px",
+                    color: "rgba(255,255,255,0.95)",
+                    textAlign: "center",
+                    lineHeight: 1.3,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}>{work.title}</span>
+                </button>
+              );
+            })}
           </div>
+
+          {confirmDelete && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
+              <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>Delete "{confirmDelete.title}"?</div>
+                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>This permanently removes it from your works.</div>
+                <button onClick={() => handleDeleteWork(confirmDelete)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "#ef5350", border: "none", color: "#fff", fontSize: "15px", fontWeight: "600", cursor: "pointer", marginBottom: "10px" }}>Delete</button>
+                <button onClick={() => setConfirmDelete(null)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "15px", cursor: "pointer" }}>Cancel</button>
+              </div>
+            </div>
+          )}
         )}
       </div>
     </div>
