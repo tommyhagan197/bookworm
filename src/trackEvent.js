@@ -1,4 +1,4 @@
-// trackEvent.js
+import { supabase } from "./lib/supabase";
 // Lightweight event logger. Import and call anywhere in the app.
 // Falls back silently on error — never blocks the user.
 //
