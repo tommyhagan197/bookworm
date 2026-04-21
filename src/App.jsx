@@ -5,28 +5,31 @@ import DiscoverView from "./views/DiscoverView";
 import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
+import PublishView from "./views/PublishView";
 import "./App.css";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("library");
   const [readerBookId, setReaderBookId] = useState(null);
+  const [showPublish, setShowPublish] = useState(false);
 
-  function openBook(bookId) {
+  function openBook(bookId) { setReaderBookId(bookId); }
+  function closeReader() { setReaderBookId(null); }
+
+  function handlePublished(bookId) {
+    setShowPublish(false);
+    setActiveTab("shelf");
     setReaderBookId(bookId);
-  }
-
-  function closeReader() {
-    setReaderBookId(null);
   }
 
   function renderTab() {
     switch (activeTab) {
-      case "shelf":     return <ShelfView onOpenBook={openBook} />;
-      case "library":   return <BrowseView onOpenBook={openBook} />;
-      case "discover":  return <DiscoverView />;
-      case "community": return <CommunityView />;
-      case "profile":   return <ProfileView />;
-      default:          return <BrowseView onOpenBook={openBook} />;
+      case "shelf":    return <ShelfView onOpenBook={openBook} />;
+      case "library":  return <BrowseView onOpenBook={openBook} />;
+      case "discover": return <DiscoverView />;
+      case "community":return <CommunityView />;
+      case "profile":  return <ProfileView onPublish={() => setShowPublish(true)} />;
+      default:         return <BrowseView onOpenBook={openBook} />;
     }
   }
 
@@ -35,10 +38,7 @@ export default function App() {
       <main className="tab-content">{renderTab()}</main>
 
       <nav className="bottom-nav">
-        <button
-          className={"nav-btn" + (activeTab === "shelf" ? " active" : "")}
-          onClick={() => setActiveTab("shelf")}
-        >
+        <button className={"nav-btn" + (activeTab === "shelf" ? " active" : "")} onClick={() => setActiveTab("shelf")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="3" width="7" height="18" rx="1"/>
             <rect x="9.5" y="5" width="5" height="16" rx="1"/>
@@ -47,10 +47,7 @@ export default function App() {
           <span>Shelf</span>
         </button>
 
-        <button
-          className={"nav-btn" + (activeTab === "library" ? " active" : "")}
-          onClick={() => setActiveTab("library")}
-        >
+        <button className={"nav-btn" + (activeTab === "library" ? " active" : "")} onClick={() => setActiveTab("library")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -59,11 +56,7 @@ export default function App() {
         </button>
 
         <div className="nav-center-slot">
-          <button
-            className={"nav-center-btn" + (activeTab === "discover" ? " active" : "")}
-            onClick={() => setActiveTab("discover")}
-            aria-label="Discover"
-          >
+          <button className={"nav-center-btn" + (activeTab === "discover" ? " active" : "")} onClick={() => setActiveTab("discover")} aria-label="Discover">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/>
               <path d="m21 21-4.35-4.35"/>
@@ -73,10 +66,7 @@ export default function App() {
           <span className={"nav-center-label" + (activeTab === "discover" ? " active" : "")}>Discover</span>
         </div>
 
-        <button
-          className={"nav-btn" + (activeTab === "community" ? " active" : "")}
-          onClick={() => setActiveTab("community")}
-        >
+        <button className={"nav-btn" + (activeTab === "community" ? " active" : "")} onClick={() => setActiveTab("community")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
@@ -86,10 +76,7 @@ export default function App() {
           <span>Community</span>
         </button>
 
-        <button
-          className={"nav-btn" + (activeTab === "profile" ? " active" : "")}
-          onClick={() => setActiveTab("profile")}
-        >
+        <button className={"nav-btn" + (activeTab === "profile" ? " active" : "")} onClick={() => setActiveTab("profile")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
@@ -98,10 +85,8 @@ export default function App() {
         </button>
       </nav>
 
-      {/* Reader overlay — mounts on top of everything when a book is open */}
-      {readerBookId && (
-        <ReaderView bookId={readerBookId} onClose={closeReader} />
-      )}
+      {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
+      {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
     </div>
   );
 }

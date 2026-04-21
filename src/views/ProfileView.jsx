@@ -33,7 +33,7 @@ const BackIcon = () => (
   </svg>
 );
 
-export default function ProfileView() {
+export default function ProfileView({ onPublish }) {
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
@@ -227,7 +227,7 @@ export default function ProfileView() {
             background: "var(--accent)", border: "none", borderRadius: "12px",
             color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
             WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
-          }}>
+          }} onClick={onPublish}>
             Publish
           </button>
           <button style={{
