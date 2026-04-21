@@ -254,7 +254,6 @@ export default function DiscoverView() {
             {/* Fetch loading overlay */}
             {fetching && (
               <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"12px", zIndex:20, borderRadius:"24px" }}>
-                <div style={{ fontSize:"32px" }}>📖</div>
                 <div style={{ color:"#fff", fontSize:"15px" }}>Fetching full text…</div>
               </div>
             )}
@@ -285,7 +284,7 @@ export default function DiscoverView() {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position:"fixed", bottom:"110px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 20px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>
+        <div style={{ position:"fixed", bottom:"160px", left:"50%", transform:"translateX(-50%)", background:"var(--text)", color:"var(--bg)", borderRadius:"20px", padding:"9px 20px", fontSize:"13px", fontWeight:"500", zIndex:200, pointerEvents:"none", whiteSpace:"nowrap", boxShadow:"0 4px 16px rgba(0,0,0,0.2)" }}>
           {toast}
         </div>
       )}
