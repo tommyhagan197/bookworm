@@ -68,7 +68,7 @@ body::after {
   z-index: 99;
 }
 
-#root { height: 100%; }
+#root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
 #app {
   height: 100%;
