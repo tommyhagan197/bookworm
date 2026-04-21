@@ -49,13 +49,16 @@ export default function PublishView({ onClose, onPublished }) {
         author: "Tommy Hagan",
         color,
         type: "published",
-        pageCount: pages.length,
+        totalPages: pages.length,
         addedAt: Date.now(),
       });
 
-      // Save pages
+      // Save pages as content arrays to match ReaderView format
       for (let i = 0; i < pages.length; i++) {
-        await dbPut("pages", { key: `${id}:${i}`, html: pages[i] });
+        await dbPut("pages", {
+          key: `${id}:${i}`,
+          content: [{ html: pages[i], isHeading: false }],
+        });
       }
 
       onPublished(id);

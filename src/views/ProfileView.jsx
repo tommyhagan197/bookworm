@@ -267,7 +267,7 @@ export default function ProfileView({ onPublish, onOpenBook }) {
                 key={work.id}
                 onClick={() => onOpenBook && onOpenBook(work.id)}
                 style={{
-                  aspectRatio: "1",
+                  aspectRatio: "2/3",
                   background: work.color || "var(--brand)",
                   border: "none",
                   cursor: "pointer",
