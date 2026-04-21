@@ -14,15 +14,27 @@ const FONT_SIZES = [
   { id: "xlarge", label: "XL", size: "21px" },
 ];
 
-const GearIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const GearIcon = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"/>
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 );
 
+const ChevronRight = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 18l6-6-6-6"/>
+  </svg>
+);
+
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6"/>
+  </svg>
+);
+
 export default function ProfileView() {
-  const [tab, setTab] = useState("profile");
+  const [showSettings, setShowSettings] = useState(false);
   const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
 
@@ -50,124 +62,31 @@ export default function ProfileView() {
   async function handleTheme(t) { setThemeState(t); applyTheme(t); await setSetting("theme", t); }
   async function handleFontSize(f) { setFontSizeState(f); applyFontSize(f); await setSetting("fontSize", f); }
 
-  return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      background: "var(--bg)",
-      minHeight: "100%",
-      paddingTop: "env(safe-area-inset-top, 44px)",
-    }}>
-
-      {/* ── Header ── */}
-      <div style={{ padding: "20px 20px 0" }}>
-
-        {/* Avatar + name row */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-          <div style={{
-            width: "72px", height: "72px", borderRadius: "50%",
-            background: "var(--brand)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#fff", fontWeight: "normal" }}>T</span>
-          </div>
-          <div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "var(--text)", lineHeight: 1.2 }}>Tommy Hagan</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>@tommyhagan</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.4 }}>Founder · BookWorm</div>
-          </div>
-        </div>
-
-        {/* Stats row */}
+  // ── Settings panel ──
+  if (showSettings) {
+    return (
+      <div style={{
+        display: "flex", flexDirection: "column",
+        background: "var(--bg)", minHeight: "100%",
+        paddingTop: "env(safe-area-inset-top, 44px)",
+      }}>
+        {/* Header */}
         <div style={{
-          display: "flex",
-          borderTop: "1px solid rgba(139,111,71,0.12)",
-          borderBottom: "1px solid rgba(139,111,71,0.12)",
-          padding: "14px 0",
-          marginBottom: "16px",
+          display: "flex", alignItems: "center", gap: "12px",
+          padding: "16px 20px 12px",
+          borderBottom: "1px solid rgba(139,111,71,0.1)",
         }}>
-          {[{ value: "0", label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
-            .map(({ value, label }, i) => (
-              <div key={label} style={{
-                flex: 1, textAlign: "center",
-                borderRight: i < 2 ? "1px solid rgba(139,111,71,0.12)" : "none",
-              }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
-              </div>
-            ))}
-        </div>
-
-        {/* Action pills */}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <button style={{
-            flex: 1, padding: "13px",
-            background: "var(--accent)", border: "none", borderRadius: "12px",
-            color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
-            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+          <button onClick={() => setShowSettings(false)} style={{
+            background: "none", border: "none", padding: "4px",
+            cursor: "pointer", color: "var(--text-muted)",
+            WebkitTapHighlightColor: "transparent", display: "flex",
           }}>
-            Publish
+            <BackIcon />
           </button>
-          <button style={{
-            flex: 1, padding: "13px",
-            background: "none",
-            border: "1.5px solid rgba(139,111,71,0.25)",
-            borderRadius: "12px",
-            color: "var(--text)", fontSize: "15px", fontWeight: "500", cursor: "pointer",
-            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
-          }}>
-            Edit Profile
-          </button>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "var(--text)" }}>Settings</div>
         </div>
 
-        {/* Tab toggle */}
-        <div style={{
-          display: "flex", background: "var(--surface)",
-          borderRadius: "10px", padding: "3px", marginBottom: "20px",
-          border: "1px solid rgba(139,111,71,0.12)",
-        }}>
-          {["profile", "settings"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              flex: 1, padding: "8px 0",
-              background: tab === t ? "var(--accent)" : "none",
-              border: "none", borderRadius: "8px",
-              fontSize: "14px",
-              color: tab === t ? "#fff" : "var(--text-muted)",
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-              textTransform: "capitalize", transition: "all 0.15s",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-            }}>
-              {t === "settings" && <GearIcon />}
-              {t === "profile" ? "Profile" : "Settings"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Profile tab ── */}
-      {tab === "profile" && (
-        <div style={{ padding: "0 20px 40px" }}>
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Account</div>
-          {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
-            <div key={item} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "15px 0",
-              borderBottom: i < arr.length - 1 ? "1px solid rgba(139,111,71,0.1)" : "none",
-              fontSize: "15px", color: "var(--text)", cursor: "pointer",
-            }}>
-              <span>{item}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Settings tab ── */}
-      {tab === "settings" && (
-        <div style={{ padding: "0 20px 40px" }}>
+        <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Appearance</div>
 
           {/* Theme */}
@@ -216,7 +135,20 @@ export default function ProfileView() {
             </div>
           </div>
 
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>About</div>
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Account</div>
+          {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
+            <div key={item} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "15px 0",
+              borderBottom: i < arr.length - 1 ? "1px solid rgba(139,111,71,0.1)" : "none",
+              fontSize: "15px", color: "var(--text)", cursor: "pointer",
+            }}>
+              <span>{item}</span>
+              <ChevronRight />
+            </div>
+          ))}
+
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", margin: "24px 0 10px" }}>About</div>
           {[["BookWorm", "v1.0"], ["Books", "Project Gutenberg"]].map(([label, value]) => (
             <div key={label} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -228,7 +160,97 @@ export default function ProfileView() {
             </div>
           ))}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // ── Main profile ──
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column",
+      background: "var(--bg)", minHeight: "100%",
+      paddingTop: "env(safe-area-inset-top, 44px)",
+    }}>
+
+      {/* Top bar */}
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px 0" }}>
+        <button onClick={() => setShowSettings(true)} style={{
+          background: "none", border: "none", padding: "4px",
+          cursor: "pointer", color: "var(--text-muted)",
+          WebkitTapHighlightColor: "transparent", display: "flex",
+        }}>
+          <GearIcon />
+        </button>
+      </div>
+
+      <div style={{ padding: "12px 20px 0" }}>
+        {/* Avatar + name */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
+          <div style={{
+            width: "72px", height: "72px", borderRadius: "50%",
+            background: "var(--brand)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#fff", fontWeight: "normal" }}>T</span>
+          </div>
+          <div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "var(--text)", lineHeight: 1.2 }}>Tommy Hagan</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>@tommyhagan</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.4 }}>Founder · BookWorm</div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{
+          display: "flex",
+          borderTop: "1px solid rgba(139,111,71,0.12)",
+          borderBottom: "1px solid rgba(139,111,71,0.12)",
+          padding: "14px 0", marginBottom: "16px",
+        }}>
+          {[{ value: "0", label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
+            .map(({ value, label }, i) => (
+              <div key={label} style={{
+                flex: 1, textAlign: "center",
+                borderRight: i < 2 ? "1px solid rgba(139,111,71,0.12)" : "none",
+              }}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              </div>
+            ))}
+        </div>
+
+        {/* Action pills */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "28px" }}>
+          <button style={{
+            flex: 1, padding: "13px",
+            background: "var(--accent)", border: "none", borderRadius: "12px",
+            color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+          }}>
+            Publish
+          </button>
+          <button style={{
+            flex: 1, padding: "13px",
+            background: "none",
+            border: "1.5px solid rgba(139,111,71,0.25)",
+            borderRadius: "12px",
+            color: "var(--text)", fontSize: "15px", fontWeight: "500", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+          }}>
+            Edit Profile
+          </button>
+        </div>
+
+        {/* Works empty state */}
+        <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "16px" }}>Works</div>
+        <div style={{
+          textAlign: "center", padding: "48px 20px",
+          color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6,
+        }}>
+          Nothing published yet.{"\n"}Tap Publish to share your first work.
+        </div>
+      </div>
     </div>
   );
 }
