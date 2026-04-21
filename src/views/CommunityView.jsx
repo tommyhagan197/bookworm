@@ -554,7 +554,16 @@ function FriendsTab() {
                 padding: "48px 24px",
               }}
             >
-              <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
+              <svg width="64" height="56" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{marginBottom: 16}}>
+                <circle cx="22" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
+                <path d="M4 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
+                <rect x="10" y="36" width="14" height="11" rx="1.5" fill="var(--accent, #E07C3A)" opacity="0.7"/>
+                <line x1="17" y1="36" x2="17" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
+                <circle cx="50" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
+                <path d="M32 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
+                <rect x="48" y="36" width="14" height="11" rx="1.5" fill="var(--ink-faded, #7A6E5F)" opacity="0.5"/>
+                <line x1="55" y1="36" x2="55" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
+              </svg>
               <div
                 style={{
                   fontSize: 18,

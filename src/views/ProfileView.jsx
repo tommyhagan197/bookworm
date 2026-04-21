@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getSetting, setSetting, dbGetAll } from "../db/idb";
+import { supabase } from "../lib/supabase";
 
 const THEMES = [
   { id: "sepia", label: "Sepia", bg: "#f5f0e8", text: "#3a2e1e" },
@@ -33,12 +34,31 @@ const BackIcon = () => (
   </svg>
 );
 
+// Two readers, drawn — no emoji
+const ReadersIllustration = () => (
+  <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Left person */}
+    <circle cx="22" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
+    <path d="M4 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
+    {/* Book left person holds */}
+    <rect x="10" y="36" width="14" height="11" rx="1.5" fill="var(--accent, #E07C3A)" opacity="0.7"/>
+    <line x1="17" y1="36" x2="17" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
+    {/* Right person */}
+    <circle cx="50" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
+    <path d="M32 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
+    {/* Book right person holds */}
+    <rect x="48" y="36" width="14" height="11" rx="1.5" fill="var(--ink-faded, #7A6E5F)" opacity="0.5"/>
+    <line x1="55" y1="36" x2="55" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
+  </svg>
+);
+
 export default function ProfileView({ onPublish, onOpenBook }) {
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
   const [works, setWorks] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     getSetting("theme", "sepia").then(t => { setThemeState(t); applyTheme(t); });
@@ -91,6 +111,12 @@ export default function ProfileView({ onPublish, onOpenBook }) {
 
   async function handleTheme(t) { setThemeState(t); applyTheme(t); await setSetting("theme", t); }
   async function handleFontSize(f) { setFontSizeState(f); applyFontSize(f); await setSetting("fontSize", f); }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await supabase.auth.signOut();
+    // Auth context will detect signout and redirect to AuthScreen
+  }
 
   // ── Settings panel ──
   if (showSettings) {
@@ -186,6 +212,31 @@ export default function ProfileView({ onPublish, onOpenBook }) {
               <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{value}</span>
             </div>
           ))}
+
+          {/* Logout */}
+          <div style={{ marginTop: "40px" }}>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "1.5px solid rgba(180,60,40,0.3)",
+                background: "transparent",
+                color: loggingOut ? "var(--text-muted)" : "#c0392b",
+                fontSize: "15px",
+                fontWeight: "500",
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+                cursor: loggingOut ? "default" : "pointer",
+                letterSpacing: "0.01em",
+                WebkitTapHighlightColor: "transparent",
+                transition: "opacity 0.15s ease",
+              }}
+            >
+              {loggingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -323,7 +374,6 @@ export default function ProfileView({ onPublish, onOpenBook }) {
           </div>
         )}
 
-        {/* Delete confirmation — outside the ternary so JSX stays valid */}
         {confirmDelete && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
             <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
