@@ -79,12 +79,12 @@ export default function BibleView({ onOpenChapter }) {
   if (view === 'chapters' && selectedBook) {
     return (
       <div className="bible-view">
-        <div className="bible-nav-header">
+        <div className="bible-nav-header" style={{position:"relative"}}>
           <button className="bible-back-btn" onClick={() => setView('books')}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Books
           </button>
-          <h2 className="bible-nav-title">{selectedBook.name}</h2>
+          <h2 className="bible-nav-title" style={{position:"absolute",left:"50%",transform:"translateX(-50%)",margin:0}}>{selectedBook.name}</h2>
           <div style={{width:60}}/>
         </div>
         <div className="bible-chapter-grid">
