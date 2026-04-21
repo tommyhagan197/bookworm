@@ -79,12 +79,12 @@ export default function BibleView({ onOpenChapter }) {
   if (view === 'chapters' && selectedBook) {
     return (
       <div className="bible-view">
-        <div className="bible-nav-header" style={{position:"relative"}}>
+        <div className="bible-nav-header">
           <button className="bible-back-btn" onClick={() => setView('books')}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Books
           </button>
-          <h2 className="bible-nav-title" style={{position:"absolute",left:"50%",transform:"translateX(-50%)",margin:0}}>{selectedBook.name}</h2>
+          <h2 className="bible-nav-title">{selectedBook.name}</h2>
           <div style={{width:60}}/>
         </div>
         <div className="bible-chapter-grid">
@@ -116,7 +116,7 @@ export default function BibleView({ onOpenChapter }) {
             <button key={book.id} className="bible-book-row" onClick={() => handleBookSelect(book)}>
               <span className="bible-book-abbrev">{book.abbrev}</span>
               <span className="bible-book-name">{book.name}</span>
-              <span className="bible-book-chapters">{book.chapters.length} ch</span>
+              <span className="bible-book-chapters">{book.chapters.length}</span>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="bible-book-chevron"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           ))}
