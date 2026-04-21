@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "./supabase";
-import { trackEvent } from "./trackEvent";
+import { supabase } from "../supabase";
+import { trackEvent } from "../trackEvent";
 
 // ── Seed data for Book Clubs (Supabase backend not yet built) ──────────────
 const CLUBS = [
