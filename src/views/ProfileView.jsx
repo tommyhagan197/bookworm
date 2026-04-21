@@ -15,7 +15,7 @@ const FONT_SIZES = [
 ];
 
 export default function ProfileView() {
-  const [activeSection, setActiveSection] = useState("profile");
+  const [tab, setTab] = useState("profile");
   const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
 
@@ -43,256 +43,148 @@ export default function ProfileView() {
   async function handleFontSize(f) { setFontSizeState(f); applyFontSize(f); await setSetting("fontSize", f); }
 
   return (
-    <div className="view-container">
-      <h1 className="view-header">Profile</h1>
+    <div style={{ display:"flex", flexDirection:"column", background:"var(--bg)", minHeight:"100%" }}>
 
-      {/* Top toggle */}
-      <div className="profile-toggle">
-        <button
-          className={"profile-toggle-btn" + (activeSection === "profile" ? " active" : "")}
-          onClick={() => setActiveSection("profile")}
-        >Profile</button>
-        <button
-          className={"profile-toggle-btn" + (activeSection === "settings" ? " active" : "")}
-          onClick={() => setActiveSection("settings")}
-        >Settings</button>
+      {/* ── Header ── */}
+      <div style={{ padding:"24px 20px 0" }}>
+
+        {/* Avatar + name row */}
+        <div style={{ display:"flex", alignItems:"center", gap:"16px", marginBottom:"16px" }}>
+          <div style={{
+            width:"72px", height:"72px", borderRadius:"50%",
+            background:"var(--brand)", display:"flex", alignItems:"center",
+            justifyContent:"center", flexShrink:0,
+          }}>
+            <span style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal" }}>T</span>
+          </div>
+          <div>
+            <div style={{ fontFamily:"Georgia, serif", fontSize:"20px", color:"var(--text)", lineHeight:1.2 }}>Tommy Hagan</div>
+            <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"2px" }}>@tommyhagan</div>
+            <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"4px", lineHeight:1.4 }}>Founder · BookWorm</div>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display:"flex", borderTop:"1px solid rgba(139,111,71,0.12)", borderBottom:"1px solid rgba(139,111,71,0.12)", padding:"14px 0", marginBottom:"16px" }}>
+          {[
+            { value: "0", label: "Shelved" },
+            { value: "0", label: "Followers" },
+            { value: "0", label: "Following" },
+          ].map(({ value, label }, i) => (
+            <div key={label} style={{
+              flex:1, textAlign:"center",
+              borderRight: i < 2 ? "1px solid rgba(139,111,71,0.12)" : "none",
+            }}>
+              <div style={{ fontFamily:"Georgia, serif", fontSize:"22px", color:"var(--text)" }}>{value}</div>
+              <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px", textTransform:"uppercase", letterSpacing:"0.05em" }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Publish button */}
+        <button style={{
+          width:"100%", padding:"13px",
+          background:"var(--accent)", border:"none", borderRadius:"12px",
+          color:"#fff", fontSize:"15px", fontWeight:"500",
+          cursor:"pointer", WebkitTapHighlightColor:"transparent",
+          marginBottom:"20px", letterSpacing:"0.01em",
+        }}>
+          Publish a Story
+        </button>
+
+        {/* Tab toggle */}
+        <div style={{ display:"flex", background:"var(--surface)", borderRadius:"10px", padding:"3px", marginBottom:"20px", border:"1px solid rgba(139,111,71,0.12)" }}>
+          {["profile","settings"].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex:1, padding:"8px 0",
+              background: tab === t ? "var(--accent)" : "none",
+              border:"none", borderRadius:"8px",
+              fontSize:"14px",
+              color: tab === t ? "#fff" : "var(--text-muted)",
+              cursor:"pointer", WebkitTapHighlightColor:"transparent",
+              textTransform:"capitalize", transition:"all 0.15s",
+            }}>{t === "profile" ? "Profile" : "Settings"}</button>
+          ))}
+        </div>
       </div>
 
-      {/* ── PROFILE ── */}
-      {activeSection === "profile" && (
-        <>
-          <div className="profile-card">
-            <div className="profile-avatar">📖</div>
-            <div>
-              <div className="profile-name">Reader</div>
-              <div className="profile-since">Member since 2026</div>
-            </div>
-          </div>
-
-          <div className="profile-stats">
-            {[
-              { label: "Books Read", value: "—" },
-              { label: "This Year",  value: "—" },
-              { label: "Pages",      value: "—" },
-            ].map(({ label, value }) => (
-              <div key={label} className="profile-stat">
-                <span className="profile-stat-value">{value}</span>
-                <span className="profile-stat-label">{label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="profile-section-label">Account</div>
-          {["Sign In / Create Account", "Reading Preferences", "Notifications"].map(item => (
-            <div key={item} className="profile-row">
+      {/* ── Profile tab ── */}
+      {tab === "profile" && (
+        <div style={{ padding:"0 20px 40px" }}>
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-muted)", marginBottom:"10px" }}>Account</div>
+          {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
+            <div key={item} style={{
+              display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"15px 0",
+              borderBottom: i < arr.length - 1 ? "1px solid rgba(139,111,71,0.1)" : "none",
+              fontSize:"15px", color:"var(--text)", cursor:"pointer",
+            }}>
               <span>{item}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6"/>
               </svg>
             </div>
           ))}
-        </>
+        </div>
       )}
 
-      {/* ── SETTINGS ── */}
-      {activeSection === "settings" && (
-        <>
-          <div className="settings-section-label">Appearance</div>
+      {/* ── Settings tab ── */}
+      {tab === "settings" && (
+        <div style={{ padding:"0 20px 40px" }}>
+
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-muted)", marginBottom:"10px" }}>Appearance</div>
 
           {/* Theme */}
-          <div className="settings-row">
-            <div className="settings-row-label">
-              <span className="settings-row-title">Theme</span>
-              <span className="settings-row-sub">Background colour while reading</span>
-            </div>
-            <div className="theme-picker">
+          <div style={{ background:"var(--surface)", borderRadius:"12px", padding:"16px", marginBottom:"10px", border:"1px solid rgba(139,111,71,0.1)" }}>
+            <div style={{ fontSize:"15px", color:"var(--text)", fontWeight:"500", marginBottom:"2px" }}>Theme</div>
+            <div style={{ fontSize:"12px", color:"var(--text-muted)", marginBottom:"14px" }}>Background colour while reading</div>
+            <div style={{ display:"flex", gap:"12px", marginBottom:"6px" }}>
               {THEMES.map(t => (
-                <button
-                  key={t.id}
-                  className={"theme-swatch" + (theme === t.id ? " active" : "")}
-                  style={{ background: t.bg, border: `2px solid ${theme === t.id ? "var(--accent)" : "rgba(139,111,71,0.25)"}` }}
-                  onClick={() => handleTheme(t.id)}
-                  aria-label={t.label}
-                >
-                  <span className="theme-swatch-dot" style={{ background: t.text }} />
+                <button key={t.id} onClick={() => handleTheme(t.id)} style={{
+                  width:"44px", height:"44px", borderRadius:"10px", cursor:"pointer",
+                  background: t.bg,
+                  border: `2px solid ${theme === t.id ? "var(--accent)" : "rgba(139,111,71,0.25)"}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  WebkitTapHighlightColor:"transparent",
+                }}>
+                  <span style={{ width:"10px", height:"10px", borderRadius:"50%", background:t.text, opacity:0.6, display:"block" }} />
                 </button>
               ))}
             </div>
-            <div className="theme-label-row">
+            <div style={{ display:"flex", gap:"12px" }}>
               {THEMES.map(t => (
-                <span key={t.id} className={"theme-label" + (theme === t.id ? " active" : "")}>{t.label}</span>
+                <span key={t.id} style={{ width:"44px", textAlign:"center", fontSize:"11px", color: theme === t.id ? "var(--accent)" : "var(--text-muted)", fontWeight: theme === t.id ? "500" : "normal" }}>{t.label}</span>
               ))}
             </div>
           </div>
 
           {/* Font size */}
-          <div className="settings-row">
-            <div className="settings-row-label">
-              <span className="settings-row-title">Text size</span>
-              <span className="settings-row-sub">Font size while reading</span>
-            </div>
-            <div className="fontsize-picker">
+          <div style={{ background:"var(--surface)", borderRadius:"12px", padding:"16px", marginBottom:"24px", border:"1px solid rgba(139,111,71,0.1)" }}>
+            <div style={{ fontSize:"15px", color:"var(--text)", fontWeight:"500", marginBottom:"2px" }}>Text size</div>
+            <div style={{ fontSize:"12px", color:"var(--text-muted)", marginBottom:"14px" }}>Font size while reading</div>
+            <div style={{ display:"flex", gap:"8px" }}>
               {FONT_SIZES.map(f => (
-                <button
-                  key={f.id}
-                  className={"fontsize-btn" + (fontSize === f.id ? " active" : "")}
-                  onClick={() => handleFontSize(f.id)}
-                >{f.label}</button>
+                <button key={f.id} onClick={() => handleFontSize(f.id)} style={{
+                  flex:1, padding:"10px 0",
+                  background: fontSize === f.id ? "var(--accent)" : "rgba(139,111,71,0.08)",
+                  border: `1.5px solid ${fontSize === f.id ? "var(--accent)" : "transparent"}`,
+                  borderRadius:"8px", fontSize:"14px",
+                  color: fontSize === f.id ? "#fff" : "var(--text)",
+                  cursor:"pointer", WebkitTapHighlightColor:"transparent",
+                }}>{f.label}</button>
               ))}
             </div>
           </div>
 
-          <div className="settings-section-label" style={{ marginTop: 24 }}>About</div>
-          <div className="settings-row-plain">
-            <span>BookWorm</span>
-            <span className="settings-row-value">v1.0</span>
-          </div>
-          <div className="settings-row-plain">
-            <span>Books are public domain</span>
-            <span className="settings-row-value">Project Gutenberg</span>
-          </div>
-        </>
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-muted)", marginBottom:"10px" }}>About</div>
+          {[["BookWorm", "v1.0"], ["Books", "Project Gutenberg"]].map(([label, value]) => (
+            <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"13px 0", borderBottom:"1px solid rgba(139,111,71,0.1)", fontSize:"14px", color:"var(--text)" }}>
+              <span>{label}</span>
+              <span style={{ fontSize:"13px", color:"var(--text-muted)" }}>{value}</span>
+            </div>
+          ))}
+        </div>
       )}
-
-      <style>{`
-        .profile-toggle {
-          display: flex;
-          background: var(--surface);
-          border-radius: 10px;
-          padding: 3px;
-          margin-bottom: 20px;
-          border: 1px solid rgba(139,111,71,0.12);
-        }
-        .profile-toggle-btn {
-          flex: 1;
-          padding: 8px 0;
-          background: none;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          color: var(--text-muted);
-          cursor: pointer;
-          transition: all 0.15s;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .profile-toggle-btn.active { background: var(--accent); color: #fff; }
-
-        .profile-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          background: var(--surface);
-          border-radius: 14px;
-          padding: 18px 16px;
-          margin-bottom: 12px;
-          border: 1px solid rgba(139,111,71,0.12);
-        }
-        .profile-avatar {
-          width: 52px;
-          height: 52px;
-          border-radius: 50%;
-          background: rgba(139,111,71,0.12);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          flex-shrink: 0;
-        }
-        .profile-name { font-family: Georgia, serif; font-size: 18px; color: var(--text); }
-        .profile-since { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-        .profile-stats {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-bottom: 24px;
-        }
-        .profile-stat {
-          background: var(--surface);
-          border-radius: 12px;
-          padding: 14px 10px;
-          text-align: center;
-          border: 1px solid rgba(139,111,71,0.1);
-        }
-        .profile-stat-value {
-          display: block;
-          font-family: Georgia, serif;
-          font-size: 22px;
-          color: var(--accent);
-        }
-        .profile-stat-label {
-          display: block;
-          font-size: 10px;
-          color: var(--text-muted);
-          margin-top: 2px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-        .profile-section-label {
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: var(--text-muted);
-          margin: 4px 0 8px;
-        }
-        .profile-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 0;
-          border-bottom: 1px solid rgba(139,111,71,0.1);
-          font-size: 15px;
-          color: var(--text);
-          cursor: pointer;
-        }
-        .profile-row:last-child { border-bottom: none; }
-        .profile-row svg { color: var(--text-muted); }
-
-        .settings-section-label {
-          font-size: 11px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: var(--text-muted);
-          margin: 4px 0 10px;
-        }
-        .settings-row {
-          background: var(--surface);
-          border-radius: 12px;
-          padding: 16px;
-          margin-bottom: 10px;
-          border: 1px solid rgba(139,111,71,0.1);
-        }
-        .settings-row-label { margin-bottom: 14px; }
-        .settings-row-title { display: block; font-size: 15px; color: var(--text); font-weight: 500; margin-bottom: 2px; }
-        .settings-row-sub { display: block; font-size: 12px; color: var(--text-muted); }
-        .theme-picker { display: flex; gap: 12px; margin-bottom: 6px; }
-        .theme-swatch {
-          width: 44px; height: 44px; border-radius: 10px; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          -webkit-tap-highlight-color: transparent; transition: transform 0.1s;
-        }
-        .theme-swatch:active { transform: scale(0.93); }
-        .theme-swatch-dot { width: 10px; height: 10px; border-radius: 50%; opacity: 0.6; }
-        .theme-label-row { display: flex; gap: 12px; }
-        .theme-label { width: 44px; text-align: center; font-size: 11px; color: var(--text-muted); }
-        .theme-label.active { color: var(--accent); font-weight: 500; }
-        .fontsize-picker { display: flex; gap: 8px; }
-        .fontsize-btn {
-          flex: 1; padding: 10px 0;
-          background: rgba(139,111,71,0.08);
-          border: 1.5px solid transparent;
-          border-radius: 8px; font-size: 14px; color: var(--text);
-          cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.15s;
-        }
-        .fontsize-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .settings-row-plain {
-          display: flex; justify-content: space-between; align-items: center;
-          padding: 13px 0; border-bottom: 1px solid rgba(139,111,71,0.1);
-          font-size: 14px; color: var(--text);
-        }
-        .settings-row-plain:last-child { border-bottom: none; }
-        .settings-row-value { font-size: 13px; color: var(--text-muted); }
-      `}</style>
     </div>
   );
 }
