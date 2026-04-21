@@ -197,7 +197,7 @@ export default function DiscoverView() {
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
 
       {/* Genre pills */}
-      <div style={{ display:"flex", gap:"8px", padding:"14px 16px 10px", overflowX:"auto", flexShrink:0, scrollbarWidth:"none" }}>
+      <div style={{ display:"flex", gap:"8px",padding:"calc(env(safe-area-inset-top, 14px) + 14px) 16px 10px", overflowX:"auto", flexShrink:0, scrollbarWidth:"none" }}>
         {GENRES.map(g => (
           <button key={g} onClick={() => handleGenre(g)} style={{
             flexShrink: 0,
@@ -292,7 +292,7 @@ export default function DiscoverView() {
 
       {/* Action buttons */}
       {top && (
-        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"14px 24px 18px", flexShrink:0 }}>
+        <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:"20px", padding:"8px 24px 12px", flexShrink:0 }}>
           <button
             onClick={() => dismiss("left")}
             disabled={fetching}
