@@ -100,7 +100,6 @@ export default function ProfileView({ onPublish, onOpenBook }) {
         background: "var(--bg)", minHeight: "100%",
         paddingTop: "env(safe-area-inset-top, 44px)",
       }}>
-        {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", gap: "12px",
           padding: "16px 20px 12px",
@@ -119,7 +118,6 @@ export default function ProfileView({ onPublish, onOpenBook }) {
         <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Appearance</div>
 
-          {/* Theme */}
           <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "10px", border: "1px solid rgba(139,111,71,0.1)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Theme</div>
             <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Background colour while reading</div>
@@ -147,7 +145,6 @@ export default function ProfileView({ onPublish, onOpenBook }) {
             </div>
           </div>
 
-          {/* Font size */}
           <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid rgba(139,111,71,0.1)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Text size</div>
             <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Font size while reading</div>
@@ -272,7 +269,7 @@ export default function ProfileView({ onPublish, onOpenBook }) {
           </button>
         </div>
 
-        {/* Works grid — Instagram style */}
+        {/* Works grid */}
         <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "12px" }}>Works</div>
         {works.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6 }}>
@@ -324,17 +321,18 @@ export default function ProfileView({ onPublish, onOpenBook }) {
               );
             })}
           </div>
+        )}
 
-          {confirmDelete && (
-            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
-              <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>Delete "{confirmDelete.title}"?</div>
-                <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>This permanently removes it from your works.</div>
-                <button onClick={() => handleDeleteWork(confirmDelete)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "#ef5350", border: "none", color: "#fff", fontSize: "15px", fontWeight: "600", cursor: "pointer", marginBottom: "10px" }}>Delete</button>
-                <button onClick={() => setConfirmDelete(null)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "15px", cursor: "pointer" }}>Cancel</button>
-              </div>
+        {/* Delete confirmation — outside the ternary so JSX stays valid */}
+        {confirmDelete && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
+            <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>Delete "{confirmDelete.title}"?</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>This permanently removes it from your works.</div>
+              <button onClick={() => handleDeleteWork(confirmDelete)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "#ef5350", border: "none", color: "#fff", fontSize: "15px", fontWeight: "600", cursor: "pointer", marginBottom: "10px" }}>Delete</button>
+              <button onClick={() => setConfirmDelete(null)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "15px", cursor: "pointer" }}>Cancel</button>
             </div>
-          )}
+          </div>
         )}
       </div>
     </div>
