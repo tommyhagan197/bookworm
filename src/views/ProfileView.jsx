@@ -99,16 +99,27 @@ export default function ProfileView() {
             ))}
         </div>
 
-        {/* Publish button */}
-        <button style={{
-          width: "100%", padding: "13px",
-          background: "var(--accent)", border: "none", borderRadius: "12px",
-          color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
-          WebkitTapHighlightColor: "transparent",
-          marginBottom: "20px", letterSpacing: "0.01em",
-        }}>
-          Publish a Story
-        </button>
+        {/* Action pills */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          <button style={{
+            flex: 1, padding: "13px",
+            background: "var(--accent)", border: "none", borderRadius: "12px",
+            color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+          }}>
+            Publish
+          </button>
+          <button style={{
+            flex: 1, padding: "13px",
+            background: "none",
+            border: "1.5px solid rgba(139,111,71,0.25)",
+            borderRadius: "12px",
+            color: "var(--text)", fontSize: "15px", fontWeight: "500", cursor: "pointer",
+            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+          }}>
+            Edit Profile
+          </button>
+        </div>
 
         {/* Tab toggle */}
         <div style={{
