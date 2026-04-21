@@ -1,204 +1,701 @@
 import { useState } from "react";
 
-const CLUB_ICONS = {
-  1: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
-  2: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>,
-  3: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
-  4: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{width:"24px",height:"24px",opacity:0.7}}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-};
+// ── Seed data ──────────────────────────────────────────────────────────────
+// Structured exactly as it will arrive from Supabase when the backend lands.
+// club.color maps to the generated-cover palette already used in Shelf/Discover.
 
-const MOCK_CLUBS = [
-  { id: 1, name: "Victorian Classics", members: 142, currentBook: "Middlemarch", genre: "Literary Fiction" },
-  { id: 2, name: "Sci-Fi Explorers",   members: 89,  currentBook: "The Time Machine", genre: "Science Fiction" },
-  { id: 3, name: "Philosophy Circle",  members: 67,  currentBook: "Thus Spoke Zarathustra", genre: "Philosophy" },
-  { id: 4, name: "Mystery & Noir",     members: 54,  currentBook: "The Moonstone", genre: "Mystery" },
+const CLUBS = [
+  {
+    id: "c1",
+    name: "The Slow Readers",
+    description: "One chapter a day. No rushing. No spoilers.",
+    currentBook: "Middlemarch",
+    author: "George Eliot",
+    chapter: "Chapter 12 of 86",
+    members: 47,
+    color: "#6B5344",   // Walnut
+    joined: true,
+  },
+  {
+    id: "c2",
+    name: "Classics Collective",
+    description: "Public domain only. We read what Amazon doesn't sell.",
+    currentBook: "Moby-Dick",
+    author: "Herman Melville",
+    chapter: "Chapter 3 of 135",
+    members: 112,
+    color: "#4A6741",   // Moss
+    joined: false,
+  },
+  {
+    id: "c3",
+    name: "Night Owls",
+    description: "Reading after midnight since 2023. Dark mode mandatory.",
+    currentBook: "Jane Eyre",
+    author: "Charlotte Brontë",
+    chapter: "Chapter 19 of 38",
+    members: 31,
+    color: "#2C4A6B",   // Ink
+    joined: false,
+  },
+  {
+    id: "c4",
+    name: "Sentence Worshippers",
+    description: "We stop to re-read beautiful sentences. Progress is slow. Worth it.",
+    currentBook: "The Master & Margarita",
+    author: "Mikhail Bulgakov",
+    chapter: "Chapter 7 of 32",
+    members: 23,
+    color: "#7A5C2E",   // Leather
+    joined: false,
+  },
+  {
+    id: "c5",
+    name: "Gutenberg Brigade",
+    description: "If it's free and brilliant, we'll read it together.",
+    currentBook: "Walden",
+    author: "Henry David Thoreau",
+    chapter: "Chapter 2 of 18",
+    members: 68,
+    color: "#4A6B5C",   // Teal
+    joined: false,
+  },
 ];
 
-const MOCK_FRIENDS = [
-  { id: 1, name: "Sarah K.", reading: "Pride and Prejudice", progress: 62, avatar: "S" },
-  { id: 2, name: "Marcus T.", reading: "Moby Dick", progress: 23, avatar: "M" },
-  { id: 3, name: "Priya R.", reading: "Frankenstein", progress: 88, avatar: "P" },
+const FRIENDS_ACTIVITY = [
+  {
+    id: "f1",
+    name: "Maya",
+    initials: "M",
+    color: "#6B5344",
+    action: "finished",
+    book: "Middlemarch",
+    time: "2 hours ago",
+  },
+  {
+    id: "f2",
+    name: "Jordan",
+    initials: "J",
+    color: "#4A6741",
+    action: "started",
+    book: "The Brothers Karamazov",
+    time: "Yesterday",
+  },
+  {
+    id: "f3",
+    name: "Priya",
+    initials: "P",
+    color: "#7A5C2E",
+    action: "reviewed",
+    book: "Jane Eyre",
+    review: "Probably the best first-person voice in all of 19th century fiction.",
+    time: "2 days ago",
+  },
+  {
+    id: "f4",
+    name: "Sam",
+    initials: "S",
+    color: "#2C4A6B",
+    action: "finished",
+    book: "Moby-Dick",
+    time: "3 days ago",
+  },
+  {
+    id: "f5",
+    name: "Leila",
+    initials: "L",
+    color: "#4A6B5C",
+    action: "started",
+    book: "Siddhartha",
+    time: "4 days ago",
+  },
 ];
 
-export default function CommunityView() {
-  const [activeSection, setActiveSection] = useState("clubs");
+// ── Sub-components ─────────────────────────────────────────────────────────
+
+function Avatar({ initials, color, size = 36 }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: color,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: "#F5F0E8",
+        fontSize: size * 0.38,
+        fontFamily: "'Lora', Georgia, serif",
+        fontWeight: 600,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+function ClubCard({ club, onJoin }) {
+  const [joining, setJoining] = useState(false);
+
+  function handleJoin() {
+    if (club.joined) return;
+    setJoining(true);
+    setTimeout(() => {
+      onJoin(club.id);
+      setJoining(false);
+    }, 600);
+  }
 
   return (
-    <div className="view-container">
-      <h1 className="view-header">Community</h1>
+    <div
+      style={{
+        background: "var(--surface, #EDE8DF)",
+        borderRadius: 16,
+        overflow: "hidden",
+        marginBottom: 12,
+      }}
+    >
+      {/* Color band */}
+      <div
+        style={{
+          height: 6,
+          background: club.color,
+          opacity: 0.85,
+        }}
+      />
 
-      <div className="comm-toggle">
-        <button
-          className={"comm-toggle-btn" + (activeSection === "clubs" ? " active" : "")}
-          onClick={() => setActiveSection("clubs")}
-        >Book Clubs</button>
-        <button
-          className={"comm-toggle-btn" + (activeSection === "friends" ? " active" : "")}
-          onClick={() => setActiveSection("friends")}
-        >Friends</button>
+      <div style={{ padding: "16px 16px 14px" }}>
+        {/* Header row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 6,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                fontFamily: "'Lora', Georgia, serif",
+                color: "var(--ink, #2C2416)",
+                letterSpacing: "-0.01em",
+                lineHeight: 1.25,
+                marginBottom: 2,
+              }}
+            >
+              {club.name}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--ink-faded, #7A6E5F)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {club.members} members
+            </div>
+          </div>
+
+          {/* Join / Joined button */}
+          <button
+            onClick={handleJoin}
+            style={{
+              flexShrink: 0,
+              padding: "7px 16px",
+              borderRadius: 20,
+              border: club.joined
+                ? "1.5px solid var(--ink-faded, #7A6E5F)"
+                : "none",
+              background: club.joined
+                ? "transparent"
+                : joining
+                ? "var(--accent-deep, #C0602A)"
+                : "var(--accent, #E07C3A)",
+              color: club.joined
+                ? "var(--ink-faded, #7A6E5F)"
+                : "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              letterSpacing: "0.01em",
+              cursor: club.joined ? "default" : "pointer",
+              transition: "background 0.15s ease",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            {club.joined ? "Joined" : joining ? "Joining…" : "Join"}
+          </button>
+        </div>
+
+        {/* Description */}
+        <p
+          style={{
+            margin: "0 0 12px",
+            fontSize: 13.5,
+            lineHeight: 1.5,
+            color: "var(--ink-secondary, #5C5040)",
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+          }}
+        >
+          {club.description}
+        </p>
+
+        {/* Current read */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            background: "var(--bg, #F5F0E8)",
+            borderRadius: 10,
+          }}
+        >
+          {/* Mini cover */}
+          <div
+            style={{
+              width: 28,
+              height: 40,
+              borderRadius: 3,
+              background: club.color,
+              flexShrink: 0,
+              opacity: 0.85,
+              boxShadow: "1px 1px 4px rgba(0,0,0,0.18)",
+            }}
+          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                color: "var(--ink-faded, #7A6E5F)",
+                textTransform: "uppercase",
+                marginBottom: 2,
+              }}
+            >
+              Now reading
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                fontFamily: "'Lora', Georgia, serif",
+                color: "var(--ink, #2C2416)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {club.currentBook}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--ink-faded, #7A6E5F)",
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+              }}
+            >
+              {club.chapter}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FriendRow({ activity }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        padding: "14px 0",
+        borderBottom: "1px solid var(--surface, #EDE8DF)",
+      }}
+    >
+      <Avatar initials={activity.initials} color={activity.color} size={38} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 14,
+            lineHeight: 1.4,
+            color: "var(--ink, #2C2416)",
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>{activity.name}</span>
+          {" "}
+          <span style={{ color: "var(--ink-secondary, #5C5040)" }}>
+            {activity.action}
+          </span>
+          {" "}
+          <span style={{ fontStyle: "italic", fontFamily: "'Lora', Georgia, serif" }}>
+            {activity.book}
+          </span>
+        </div>
+        {activity.review && (
+          <div
+            style={{
+              marginTop: 6,
+              padding: "8px 12px",
+              background: "var(--surface, #EDE8DF)",
+              borderRadius: 8,
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: "var(--ink-secondary, #5C5040)",
+              fontFamily: "'Lora', Georgia, serif",
+              fontStyle: "italic",
+            }}
+          >
+            "{activity.review}"
+          </div>
+        )}
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: 11,
+            color: "var(--ink-faded, #7A6E5F)",
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            letterSpacing: "0.02em",
+          }}
+        >
+          {activity.time}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main view ──────────────────────────────────────────────────────────────
+
+export default function CommunityView() {
+  const [tab, setTab] = useState("clubs");
+  const [clubs, setClubs] = useState(CLUBS);
+
+  function handleJoin(clubId) {
+    setClubs((prev) =>
+      prev.map((c) => (c.id === clubId ? { ...c, joined: true } : c))
+    );
+  }
+
+  const joinedClubs = clubs.filter((c) => c.joined);
+  const browseClubs = clubs.filter((c) => !c.joined);
+
+  return (
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        background: "var(--bg, #F5F0E8)",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          paddingTop: "env(safe-area-inset-top, 44px)",
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingBottom: 0,
+          background: "var(--bg, #F5F0E8)",
+        }}
+      >
+        <div
+          style={{
+            paddingTop: 16,
+            paddingBottom: 16,
+          }}
+        >
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 28,
+              fontWeight: 700,
+              fontFamily: "'Lora', Georgia, serif",
+              color: "var(--ink, #2C2416)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.15,
+            }}
+          >
+            Community
+          </h1>
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontSize: 13,
+              color: "var(--ink-faded, #7A6E5F)",
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              letterSpacing: "0.01em",
+            }}
+          >
+            Book clubs and friends activity
+          </p>
+        </div>
+
+        {/* Tab switcher */}
+        <div
+          style={{
+            display: "flex",
+            gap: 0,
+            background: "var(--surface, #EDE8DF)",
+            borderRadius: 10,
+            padding: 3,
+            marginBottom: 20,
+          }}
+        >
+          {["clubs", "friends"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                flex: 1,
+                padding: "8px 0",
+                borderRadius: 8,
+                border: "none",
+                background: tab === t ? "var(--bg, #F5F0E8)" : "transparent",
+                color:
+                  tab === t
+                    ? "var(--ink, #2C2416)"
+                    : "var(--ink-faded, #7A6E5F)",
+                fontSize: 14,
+                fontWeight: tab === t ? 600 : 400,
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                boxShadow:
+                  tab === t ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
+                WebkitTapHighlightColor: "transparent",
+                textTransform: "capitalize",
+              }}
+            >
+              {t === "clubs" ? "Book Clubs" : "Friends"}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeSection === "clubs" && (
-        <>
-          <p className="view-subhead">Read together, discuss weekly.</p>
-          <div className="clubs-list">
-            {MOCK_CLUBS.map(club => (
-              <div key={club.id} className="club-card">
-                <div className="club-emoji">{CLUB_ICONS[club.id]}</div>
-                <div className="club-info">
-                  <div className="club-name">{club.name}</div>
-                  <div className="club-genre">{club.genre}</div>
-                  <div className="club-now">Now reading: <em>{club.currentBook}</em></div>
-                  <div className="club-members">{club.members} members</div>
+      {/* Content */}
+      <div style={{ flex: 1, padding: "0 16px 32px" }}>
+        {tab === "clubs" && (
+          <>
+            {/* Joined clubs */}
+            {joinedClubs.length > 0 && (
+              <>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--ink-faded, #7A6E5F)",
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    marginBottom: 10,
+                  }}
+                >
+                  Your Clubs
                 </div>
-                <button className="club-join-btn">Join</button>
-              </div>
-            ))}
-            <div className="clubs-coming-soon">
-              Create your own club — coming soon.
-            </div>
-          </div>
-        </>
-      )}
+                {joinedClubs.map((club) => (
+                  <ClubCard key={club.id} club={club} onJoin={handleJoin} />
+                ))}
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--ink-faded, #7A6E5F)",
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    marginTop: 20,
+                    marginBottom: 10,
+                  }}
+                >
+                  Browse Clubs
+                </div>
+              </>
+            )}
 
-      {activeSection === "friends" && (
-        <>
-          <p className="view-subhead">What your friends are reading.</p>
-          <div className="friends-list">
-            {MOCK_FRIENDS.map(f => (
-              <div key={f.id} className="friend-card">
-                <div className="friend-avatar">{f.avatar}</div>
-                <div className="friend-info">
-                  <div className="friend-name">{f.name}</div>
-                  <div className="friend-reading">Reading <em>{f.reading}</em></div>
-                  <div className="friend-progress-wrap">
-                    <div className="friend-progress-bar">
-                      <div className="friend-progress-fill" style={{ width: f.progress + "%" }} />
-                    </div>
-                    <span className="friend-pct">{f.progress}%</span>
+            {browseClubs.length === 0 && joinedClubs.length > 0 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "32px 0",
+                  color: "var(--ink-faded, #7A6E5F)",
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                  fontSize: 14,
+                }}
+              >
+                You've joined every club. More coming soon.
+              </div>
+            )}
+
+            {browseClubs.map((club) => (
+              <ClubCard key={club.id} club={club} onJoin={handleJoin} />
+            ))}
+
+            {/* Empty state — no clubs at all */}
+            {clubs.length === 0 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "60px 24px",
+                }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 16 }}>📚</div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontFamily: "'Lora', Georgia, serif",
+                    fontWeight: 600,
+                    color: "var(--ink, #2C2416)",
+                    marginBottom: 8,
+                  }}
+                >
+                  No clubs yet
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "var(--ink-faded, #7A6E5F)",
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Book clubs are coming soon. You'll be able to read
+                  together, assign chapters, and discuss in-line.
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "friends" && (
+          <>
+            {FRIENDS_ACTIVITY.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "60px 24px",
+                }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
+                <div
+                  style={{
+                    fontSize: 18,
+                    fontFamily: "'Lora', Georgia, serif",
+                    fontWeight: 600,
+                    color: "var(--ink, #2C2416)",
+                    marginBottom: 8,
+                  }}
+                >
+                  No friends yet
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "var(--ink-faded, #7A6E5F)",
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  When your friends join BookWorm, their reading activity
+                  will appear here.
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--ink-faded, #7A6E5F)",
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    marginBottom: 2,
+                  }}
+                >
+                  Recent Activity
+                </div>
+                {FRIENDS_ACTIVITY.map((activity) => (
+                  <FriendRow key={activity.id} activity={activity} />
+                ))}
+
+                {/* Invite nudge */}
+                <div
+                  style={{
+                    marginTop: 28,
+                    padding: "18px 16px",
+                    background: "var(--surface, #EDE8DF)",
+                    borderRadius: 12,
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontFamily: "'Lora', Georgia, serif",
+                      fontWeight: 600,
+                      color: "var(--ink, #2C2416)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Invite a reader
                   </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--ink-faded, #7A6E5F)",
+                      fontFamily: "'DM Sans', system-ui, sans-serif",
+                      lineHeight: 1.45,
+                      marginBottom: 14,
+                    }}
+                  >
+                    Reading is better shared. Send someone the link.
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: "BookWorm",
+                          text: "Reading, refined. Free books, beautiful reader.",
+                          url: "https://bookworm-dpq.pages.dev",
+                        });
+                      }
+                    }}
+                    style={{
+                      padding: "10px 24px",
+                      borderRadius: 20,
+                      border: "none",
+                      background: "var(--accent, #E07C3A)",
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      fontFamily: "'DM Sans', system-ui, sans-serif",
+                      cursor: "pointer",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    Share BookWorm
+                  </button>
                 </div>
               </div>
-            ))}
-            <div className="clubs-coming-soon">
-              Add friends — coming soon.
-            </div>
-          </div>
-        </>
-      )}
-
-      <style>{`
-        .comm-toggle {
-          display: flex;
-          background: var(--surface);
-          border-radius: 10px;
-          padding: 3px;
-          margin-bottom: 16px;
-          border: 1px solid rgba(139,111,71,0.12);
-        }
-        .comm-toggle-btn {
-          flex: 1;
-          padding: 8px 0;
-          background: none;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          color: var(--text-muted);
-          cursor: pointer;
-          transition: all 0.15s;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .comm-toggle-btn.active { background: var(--accent); color: #fff; }
-
-        /* Clubs */
-        .clubs-list { display: flex; flex-direction: column; gap: 10px; }
-        .club-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          background: var(--surface);
-          border-radius: 14px;
-          padding: 16px;
-          border: 1px solid rgba(139,111,71,0.1);
-        }
-        .club-emoji {
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          background: rgba(139,111,71,0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-          flex-shrink: 0;
-        }
-        .club-info { flex: 1; min-width: 0; }
-        .club-name { font-family: Georgia, serif; font-size: 16px; color: var(--text); margin-bottom: 1px; }
-        .club-genre { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
-        .club-now { font-size: 12px; color: var(--text-muted); }
-        .club-now em { font-style: italic; color: var(--text); }
-        .club-members { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-        .club-join-btn {
-          padding: 7px 16px;
-          background: var(--accent);
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          font-size: 13px;
-          cursor: pointer;
-          flex-shrink: 0;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .clubs-coming-soon {
-          text-align: center;
-          font-size: 13px;
-          color: var(--text-muted);
-          padding: 12px 0 4px;
-        }
-
-        /* Friends */
-        .friends-list { display: flex; flex-direction: column; gap: 10px; }
-        .friend-card {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          background: var(--surface);
-          border-radius: 14px;
-          padding: 16px;
-          border: 1px solid rgba(139,111,71,0.1);
-        }
-        .friend-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: var(--accent);
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: Georgia, serif;
-          font-size: 18px;
-          flex-shrink: 0;
-        }
-        .friend-info { flex: 1; min-width: 0; }
-        .friend-name { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
-        .friend-reading { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-        .friend-reading em { font-style: italic; color: var(--text); }
-        .friend-progress-wrap { display: flex; align-items: center; gap: 8px; }
-        .friend-progress-bar {
-          flex: 1;
-          height: 3px;
-          background: rgba(139,111,71,0.15);
-          border-radius: 3px;
-          overflow: hidden;
-        }
-        .friend-progress-fill {
-          height: 100%;
-          background: var(--accent);
-          border-radius: 3px;
-        }
-        .friend-pct { font-size: 11px; color: var(--text-muted); min-width: 28px; text-align: right; }
-      `}</style>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
