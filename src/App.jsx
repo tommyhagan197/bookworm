@@ -1,80 +1,87 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "./auth/AuthContext.jsx";
 import AuthScreen from "./auth/AuthScreen.jsx";
-import { useState } from "react";
-import ShelfView from "./views/ShelfView.jsx";
-import LibraryView from "./views/LibraryView.jsx";
-import DiscoverView from "./views/DiscoverView.jsx";
-import CommunityView from "./views/CommunityView.jsx";
-import ProfileView from "./views/ProfileView.jsx";
+import BrowseView from "./views/BrowseView";
+import ShelfView from "./views/ShelfView";
+import DiscoverView from "./views/DiscoverView";
+import CommunityView from "./views/CommunityView";
+import ProfileView from "./views/ProfileView";
+import ReaderView from "./views/ReaderView";
+import PublishView from "./views/PublishView";
+import { getSetting } from "./db/idb";
+import "./App.css";
+
+const THEME_VARS = {
+  sepia: { "--bg": "#f5f0e8", "--surface": "#ede8df", "--text": "#3a2e1e", "--text-muted": "#9c8b78" },
+  light: { "--bg": "#ffffff", "--surface": "#f5f5f5", "--text": "#1a1a1a", "--text-muted": "#9c8b78" },
+  dark:  { "--bg": "#1a1714", "--surface": "#252220", "--text": "#e8e0d0", "--text-muted": "#8a7f72" },
+};
 
 export default function App() {
   const { session } = useAuth();
-  const [activeTab, setActiveTab] = useState("shelf");
+  const [activeTab, setActiveTab] = useState("library");
+  const [readerBookId, setReaderBookId] = useState(null);
+  const [showPublish, setShowPublish] = useState(false);
 
-  if (session === undefined) {
-    return (
-      <div style={{ minHeight: "100dvh", background: "var(--bg, #F5F0E8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--accent, #E07C3A)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(224,124,58,0.3)", animation: "pulse 1.6s ease-in-out infinite" }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </div>
-        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
-      </div>
-    );
-  }
+  useEffect(() => {
+    getSetting("theme", "sepia").then(t => {
+      const vars = THEME_VARS[t] || THEME_VARS.sepia;
+      Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+      document.body.dataset.theme = t;
+    });
+    getSetting("fontSize", "medium").then(f => {
+      const sizes = { small: "15px", medium: "17px", large: "19px", xlarge: "21px" };
+      document.documentElement.style.setProperty("--reader-font-size", sizes[f] || "17px");
+    });
+  }, []);
 
+  if (session === undefined) return null;
   if (!session) return <AuthScreen />;
 
-  const tabs = [
-    { id: "shelf", label: "Shelf", icon: ShelfIcon },
-    { id: "library", label: "Library", icon: LibraryIcon },
-    { id: "discover", label: "Discover", icon: DiscoverIcon },
-    { id: "community", label: "Community", icon: CommunityIcon },
-    { id: "profile", label: "Profile", icon: ProfileIcon },
-  ];
+  function openBook(bookId) { setReaderBookId(bookId); }
+  function closeReader() { setReaderBookId(null); }
+  function handlePublished() { setShowPublish(false); setActiveTab("profile"); }
 
-  const TAB_BAR_HEIGHT = 60;
+  function renderTab() {
+    switch (activeTab) {
+      case "shelf":     return <ShelfView onOpenBook={openBook} />;
+      case "library":   return <BrowseView onOpenBook={openBook} />;
+      case "discover":  return <DiscoverView />;
+      case "community": return <CommunityView />;
+      case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} onOpenBook={openBook} />;
+      default:          return <BrowseView onOpenBook={openBook} />;
+    }
+  }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "var(--bg, #F5F0E8)", display: "flex", flexDirection: "column" }}>
-      {/* View area — takes all space above tab bar */}
-      <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        <div style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
-          {activeTab === "shelf" && <ShelfView />}
-          {activeTab === "library" && <LibraryView />}
-          {activeTab === "discover" && <DiscoverView />}
-          {activeTab === "community" && <CommunityView />}
-          {activeTab === "profile" && <ProfileView />}
+    <div className="app-shell">
+      <main className="tab-content">{renderTab()}</main>
+      <nav className="bottom-nav">
+        <button className={"nav-btn" + (activeTab === "shelf" ? " active" : "")} onClick={() => setActiveTab("shelf")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="7" height="18" rx="1"/><rect x="9.5" y="5" width="5" height="16" rx="1"/><rect x="15.5" y="7" width="6.5" height="14" rx="1"/></svg>
+          <span>Shelf</span>
+        </button>
+        <button className={"nav-btn" + (activeTab === "library" ? " active" : "")} onClick={() => setActiveTab("library")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Library</span>
+        </button>
+        <div className="nav-center-slot">
+          <button className={"nav-center-btn" + (activeTab === "discover" ? " active" : "")} onClick={() => setActiveTab("discover")} aria-label="Discover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6" strokeWidth="1.6"/></svg>
+          </button>
+          <span className={"nav-center-label" + (activeTab === "discover" ? " active" : "")}>Discover</span>
         </div>
-      </div>
-
-      {/* Tab bar — always visible at bottom */}
-      <div style={{ height: TAB_BAR_HEIGHT, display: "flex", background: "var(--bg, #F5F0E8)", borderTop: "1px solid var(--surface, #EDE8DF)", paddingBottom: "env(safe-area-inset-bottom, 0px)", flexShrink: 0, zIndex: 100 }}>
-        {tabs.map(({ id, label, icon: Icon }) => {
-          const active = activeTab === id;
-          return (
-            <button key={id} onClick={() => setActiveTab(id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "8px 0 6px", gap: 3, background: "none", border: "none", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
-              <Icon active={active} />
-              <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, fontFamily: "'DM Sans', system-ui, sans-serif", color: active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)", letterSpacing: "0.02em" }}>{label}</span>
-            </button>
-          );
-        })}
-      </div>
+        <button className={"nav-btn" + (activeTab === "community" ? " active" : "")} onClick={() => setActiveTab("community")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Community</span>
+        </button>
+        <button className={"nav-btn" + (activeTab === "profile" ? " active" : "")} onClick={() => setActiveTab("profile")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </button>
+      </nav>
+      {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
+      {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
     </div>
   );
-}
-
-function ShelfIcon({ active }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)"} strokeWidth={active ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
-}
-function LibraryIcon({ active }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)"} strokeWidth={active ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>;
-}
-function DiscoverIcon({ active }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)"} strokeWidth={active ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>;
-}
-function CommunityIcon({ active }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)"} strokeWidth={active ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-}
-function ProfileIcon({ active }) {
-  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)"} strokeWidth={active ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 }
