@@ -32,20 +32,27 @@ export default function App() {
     { id: "profile", label: "Profile", icon: ProfileIcon },
   ];
 
+  const TAB_BAR_HEIGHT = 60;
+
   return (
-    <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "var(--bg, #F5F0E8)", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--bg, #F5F0E8)", display: "flex", flexDirection: "column" }}>
+      {/* View area — takes all space above tab bar */}
       <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        {activeTab === "shelf" && <ShelfView />}
-        {activeTab === "library" && <LibraryView />}
-        {activeTab === "discover" && <DiscoverView />}
-        {activeTab === "community" && <CommunityView />}
-        {activeTab === "profile" && <ProfileView />}
+        <div style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+          {activeTab === "shelf" && <ShelfView />}
+          {activeTab === "library" && <LibraryView />}
+          {activeTab === "discover" && <DiscoverView />}
+          {activeTab === "community" && <CommunityView />}
+          {activeTab === "profile" && <ProfileView />}
+        </div>
       </div>
-      <div style={{ display: "flex", background: "var(--bg, #F5F0E8)", borderTop: "1px solid var(--surface, #EDE8DF)", paddingBottom: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }}>
+
+      {/* Tab bar — always visible at bottom */}
+      <div style={{ height: TAB_BAR_HEIGHT, display: "flex", background: "var(--bg, #F5F0E8)", borderTop: "1px solid var(--surface, #EDE8DF)", paddingBottom: "env(safe-area-inset-bottom, 0px)", flexShrink: 0, zIndex: 100 }}>
         {tabs.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
           return (
-            <button key={id} onClick={() => setActiveTab(id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 0 8px", gap: 3, background: "none", border: "none", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+            <button key={id} onClick={() => setActiveTab(id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "8px 0 6px", gap: 3, background: "none", border: "none", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
               <Icon active={active} />
               <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, fontFamily: "'DM Sans', system-ui, sans-serif", color: active ? "var(--accent, #E07C3A)" : "var(--ink-faded, #7A6E5F)", letterSpacing: "0.02em" }}>{label}</span>
             </button>
