@@ -38,9 +38,9 @@ body {
 }
 
 /* ── Bottom Nav ── */
-.bottom-nav { padding-bottom: env(safe-area-inset-bottom, 34px);
-  position: fixed;
+.bottom-nav { position: fixed;
   bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 34px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
