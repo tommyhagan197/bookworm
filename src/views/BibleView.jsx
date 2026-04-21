@@ -114,7 +114,6 @@ export default function BibleView({ onOpenChapter }) {
         <div className="bible-books-list">
           {filtered.map(book => (
             <button key={book.id} className="bible-book-row" onClick={() => handleBookSelect(book)}>
-              <span className="bible-book-abbrev">{book.abbrev}</span>
               <span className="bible-book-name">{book.name}</span>
               <span className="bible-book-chapters">{book.chapters.length}</span>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="bible-book-chevron"><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
