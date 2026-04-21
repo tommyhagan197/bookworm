@@ -87,7 +87,7 @@ export default function ProfileView() {
           padding: "14px 0",
           marginBottom: "16px",
         }}>
-          {[{ value: "0", label: "Shelved" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
+          {[{ value: "0", label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
             .map(({ value, label }, i) => (
               <div key={label} style={{
                 flex: 1, textAlign: "center",
