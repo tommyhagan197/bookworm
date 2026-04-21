@@ -55,7 +55,7 @@ export default function PublishView({ onClose, onPublished }) {
 
       // Save pages
       for (let i = 0; i < pages.length; i++) {
-        await dbPut("pages", { id: `${id}:${i}`, html: pages[i] });
+        await dbPut("pages", { key: `${id}:${i}`, html: pages[i] });
       }
 
       onPublished(id);
