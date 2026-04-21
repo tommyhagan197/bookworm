@@ -16,10 +16,9 @@ export default function App() {
   function openBook(bookId) { setReaderBookId(bookId); }
   function closeReader() { setReaderBookId(null); }
 
-  function handlePublished(bookId) {
+  function handlePublished() {
     setShowPublish(false);
-    setActiveTab("shelf");
-    setReaderBookId(bookId);
+    setActiveTab("profile");
   }
 
   function renderTab() {
