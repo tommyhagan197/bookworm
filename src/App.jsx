@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import BrowseView from "./views/BrowseView";
 import ShelfView from "./views/ShelfView";
 import DiscoverView from "./views/DiscoverView";
@@ -6,38 +6,20 @@ import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
 import PublishView from "./views/PublishView";
-import { getSetting } from "./db/idb";
 import "./App.css";
-
-const THEME_VARS = {
-  sepia: { "--bg": "#f5f0e8", "--surface": "#ede8df", "--text": "#3a2e1e", "--text-muted": "#9c8b78" },
-  light: { "--bg": "#ffffff", "--surface": "#f5f5f5", "--text": "#1a1a1a", "--text-muted": "#9c8b78" },
-  dark:  { "--bg": "#1a1714", "--surface": "#252220", "--text": "#e8e0d0", "--text-muted": "#8a7f72" },
-};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("library");
   const [readerBookId, setReaderBookId] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
 
-  useEffect(() => {
-    getSetting("theme", "sepia").then(t => {
-      const vars = THEME_VARS[t] || THEME_VARS.sepia;
-      Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-      document.body.dataset.theme = t;
-    });
-    getSetting("fontSize", "medium").then(f => {
-      const sizes = { small: "15px", medium: "17px", large: "19px", xlarge: "21px" };
-      document.documentElement.style.setProperty("--reader-font-size", sizes[f] || "17px");
-    });
-  }, []);
-
   function openBook(bookId) { setReaderBookId(bookId); }
   function closeReader() { setReaderBookId(null); }
 
-  function handlePublished() {
+  function handlePublished(bookId) {
     setShowPublish(false);
-    setActiveTab("profile");
+    setActiveTab("shelf");
+    setReaderBookId(bookId);
   }
 
   function renderTab() {
@@ -46,7 +28,7 @@ export default function App() {
       case "library":  return <BrowseView onOpenBook={openBook} />;
       case "discover": return <DiscoverView />;
       case "community":return <CommunityView />;
-      case "profile":  return <ProfileView onPublish={() => setShowPublish(true)} onOpenBook={openBook} />;
+      case "profile":  return <ProfileView onPublish={() => setShowPublish(true)} />;
       default:         return <BrowseView onOpenBook={openBook} />;
     }
   }
