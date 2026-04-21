@@ -8,6 +8,8 @@ import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
 import PublishView from "./views/PublishView";
+import BibleView from "./views/BibleView";
+import BibleReaderView from "./views/BibleReaderView";
 import { getSetting } from "./db/idb";
 import "./App.css";
 
@@ -22,6 +24,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("library");
   const [readerBookId, setReaderBookId] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
+  const [bibleState, setBibleState] = useState(null);
 
   useEffect(() => {
     getSetting("theme", "sepia").then(t => {
@@ -45,11 +48,12 @@ export default function App() {
   function renderTab() {
     switch (activeTab) {
       case "shelf":     return <ShelfView onOpenBook={openBook} />;
-      case "library":   return <BrowseView onOpenBook={openBook} />;
+      case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={() => setActiveTab("bible")} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;
       case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} onOpenBook={openBook} />;
-      default:          return <BrowseView onOpenBook={openBook} />;
+      case "bible":     return <BibleView onOpenChapter={(state) => setBibleState(state)} />;
+      default:          return <BrowseView onOpenBook={openBook} onOpenBible={() => setActiveTab("bible")} />;
     }
   }
 
@@ -61,7 +65,7 @@ export default function App() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="7" height="18" rx="1"/><rect x="9.5" y="5" width="5" height="16" rx="1"/><rect x="15.5" y="7" width="6.5" height="14" rx="1"/></svg>
           <span>Shelf</span>
         </button>
-        <button className={"nav-btn" + (activeTab === "library" ? " active" : "")} onClick={() => setActiveTab("library")}>
+        <button className={"nav-btn" + (activeTab === "library" || activeTab === "bible" ? " active" : "")} onClick={() => setActiveTab("library")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           <span>Library</span>
         </button>
@@ -81,6 +85,15 @@ export default function App() {
         </button>
       </nav>
       {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
+      {bibleState && (
+        <BibleReaderView
+          book={bibleState.book}
+          chapterIndex={bibleState.chapterIndex}
+          allBooks={bibleState.allBooks}
+          onClose={() => setBibleState(null)}
+          onNavigate={(s) => setBibleState(s)}
+        />
+      )}
       {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
     </div>
   );
