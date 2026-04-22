@@ -188,15 +188,15 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
                   <div className="browse-card-title">{book.title}</div>
                   <div className="browse-card-author">{author}</div>
                   <button
-                    className={"browse-btn" + (already ? " in-library" : "") + (isDownloading ? " loading" : "")}
+                    className={"browse-btn" + (already && !isDownloading ? " in-library" : "") }
                     disabled={isDownloading}
                     onClick={() => download(book)}
+                    style={{ minWidth: 120 }}
                   >
-                    {isDownloading ? (
-                      <svg className="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeWidth="2.5" strokeLinecap="round"/>
-                      </svg>
-                    ) : already ? "✓ Open book" : "+ Add to Shelf"}
+                    {isDownloading
+                      ? <svg className="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" style={{ margin: '0 auto', display: 'block' }}><path d="M21 12a9 9 0 1 1-6.219-8.56" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                      : already ? "✓ Open book" : "+ Add to Shelf"
+                    }
                   </button>
                 </div>
               </div>

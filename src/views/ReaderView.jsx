@@ -106,7 +106,7 @@ function paginateParas(paras, availableHeight, fontSize, lineHeight, paraGap, pa
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-const FONT_SIZES = [15, 17, 19, 21, 24];
+const FONT_SIZES = [14, 16, 18, 20, 22];
 const LINE_HEIGHTS = [1.6, 1.75, 1.9];
 const PADDING_H = 28;
 const PADDING_V = 80; // top + bottom HUD space
@@ -139,7 +139,7 @@ export default function ReaderView({ bookId, onClose }) {
 
   const fontSize = FONT_SIZES[fontSizeIdx];
   const lineHeight = LINE_HEIGHTS[lineHeightIdx];
-  const availableHeight = window.innerHeight - PADDING_V * 2;
+  const availableHeight = window.innerHeight - PADDING_V * 2 - 40;
 
   // ── Load book ──────────────────────────────────────────────────────────────
 
