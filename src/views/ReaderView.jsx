@@ -567,5 +567,3 @@ function css(fontSize, lineHeight) {
   `;
 }
 
-const PADDING_H = 28;
-const PADDING_V = 80;
