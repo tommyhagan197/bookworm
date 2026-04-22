@@ -209,7 +209,7 @@ export default function ShelfView({ onOpenBook }) {
     <div className="view-container">
       <h1 className="view-header">Your Shelf</h1>
       <p className="view-subhead">{books.length} {books.length === 1 ? "book" : "books"}</p>
-      <div className="shelf-grid">
+      <div className="shelf-grid" style={{ padding: "0 2px" }}>
         {books.map((book) => {
           let pressTimer = null;
           return (
@@ -243,7 +243,7 @@ export default function ShelfView({ onOpenBook }) {
       )}
 
       <style>{`
-       .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 14px; align-items: start; width: 100%; }
+       .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 12px; align-items: start; box-sizing: border-box; }
         .shelf-card { background: none; border: none; cursor: pointer; text-align: left; padding: 0; -webkit-tap-highlight-color: transparent; width: 100%; }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
         .shelf-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Lora', Georgia, serif; }

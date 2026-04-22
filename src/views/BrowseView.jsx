@@ -140,7 +140,7 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
 
       {/* Bible row */}
       {onOpenBible && (
-        <div className="browse-card" style={{ cursor: "pointer" }} onClick={onOpenBible}>
+        <div className="browse-card">
           <div className="browse-cover" style={{ background: "#4a2e10", alignItems: "center", justifyContent: "center" }}>
             <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="8.5" y="0" width="3.5" height="28" rx="1.5" fill="rgba(255,255,255,0.88)"/>
@@ -149,8 +149,8 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
           </div>
           <div className="browse-card-body">
             <div className="browse-card-title">Holy Bible</div>
-            <div className="browse-card-author">King James Version</div>
-          <button className="browse-btn" onClick={e => { e.stopPropagation(); onOpenBible && onOpenBible(); }}>+ Add to Shelf</button>
+            <div className="browse-card-author">King James Version · Free</div>
+            <button className="browse-btn" onClick={onOpenBible}>Open Bible</button>
           </div>
         </div>
       )}
