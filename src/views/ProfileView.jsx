@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
-import { getSetting, setSetting, dbGetAll } from "../db/idb";
-import { supabase } from "../lib/supabase";
-
-const THEMES = [
-  { id: "sepia", label: "Sepia", bg: "#f5f0e8", text: "#3a2e1e" },
-  { id: "light", label: "Light", bg: "#ffffff", text: "#1a1a1a" },
-  { id: "dark",  label: "Dark",  bg: "#1a1714", text: "#e8e0d0" },
-];
+import { getSetting, setSetting } from "../db/idb";
+import { useTheme } from "../App";
 
 const FONT_SIZES = [
   { id: "small",  label: "S",  size: "15px" },
@@ -34,88 +28,67 @@ const BackIcon = () => (
   </svg>
 );
 
-// Two readers, drawn — no emoji
-const ReadersIllustration = () => (
-  <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Left person */}
-    <circle cx="22" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
-    <path d="M4 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
-    {/* Book left person holds */}
-    <rect x="10" y="36" width="14" height="11" rx="1.5" fill="var(--accent, #E07C3A)" opacity="0.7"/>
-    <line x1="17" y1="36" x2="17" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
-    {/* Right person */}
-    <circle cx="50" cy="14" r="9" fill="var(--surface, #EDE8DF)" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5"/>
-    <path d="M32 52c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="var(--ink-faded, #7A6E5F)" strokeWidth="1.5" strokeLinecap="round" fill="var(--surface, #EDE8DF)"/>
-    {/* Book right person holds */}
-    <rect x="48" y="36" width="14" height="11" rx="1.5" fill="var(--ink-faded, #7A6E5F)" opacity="0.5"/>
-    <line x1="55" y1="36" x2="55" y2="47" stroke="white" strokeWidth="1" opacity="0.5"/>
-  </svg>
-);
+function ThemeTile({ id, label, active, onClick }) {
+  const configs = {
+    night: { preview: "#0a0a0a", line: "#3a3228", labelBg: "#070707", labelColor: active ? "#E07C3A" : "#2a2a2a", border: "#111" },
+    sepia: { preview: "#F5F0E8", line: "#c4b8a4", labelBg: "#EDE7DA", labelColor: active ? "#C0602A" : "#b5a898", border: "#DDD5C6" },
+    paper: { preview: "#ffffff", line: "#d8d8d8", labelBg: "#f8f8f8", labelColor: active ? "#E07C3A" : "#c0c0c0", border: "#ebebeb" },
+  };
+  const c = configs[id];
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, borderRadius: "10px", overflow: "hidden", padding: 0, cursor: "pointer",
+        border: `${active ? "1.5px" : "0.5px"} solid ${active ? "#E07C3A" : c.border}`,
+        background: "none", WebkitTapHighlightColor: "transparent",
+        transition: "border-color 0.15s ease",
+      }}
+    >
+      <div style={{ background: c.preview, padding: "10px 8px 8px", display: "flex", flexDirection: "column", gap: "5px" }}>
+        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.7 }} />
+        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.5, width: "60%" }} />
+        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.7 }} />
+      </div>
+      <div style={{
+        background: c.labelBg, borderTop: `0.5px solid ${c.border}`,
+        padding: "5px 8px 7px", textAlign: "center",
+        fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase",
+        color: c.labelColor, fontWeight: active ? "500" : "400",
+        transition: "color 0.15s ease",
+      }}>
+        {label}
+      </div>
+    </button>
+  );
+}
 
-export default function ProfileView({ onPublish, onOpenBook }) {
+export default function ProfileView({ onPublish }) {
+  const { theme, setTheme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setThemeState] = useState("sepia");
   const [fontSize, setFontSizeState] = useState("medium");
-  const [works, setWorks] = useState([]);
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    getSetting("theme", "sepia").then(t => { setThemeState(t); applyTheme(t); });
-    getSetting("fontSize", "medium").then(f => { setFontSizeState(f); applyFontSize(f); });
-    loadWorks();
-  }, []);
-
-  async function loadWorks() {
-    const all = await dbGetAll("books");
-    setWorks(all.filter(b => b.type === "published"));
-  }
-
-  async function handleDeleteWork(work) {
-    const { openDB } = await import("../db/idb");
-    const db = await openDB();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(["books", "pages"], "readwrite");
-      tx.objectStore("books").delete(work.id);
-      const pageStore = tx.objectStore("pages");
-      const req = pageStore.openCursor();
-      req.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          if (cursor.key.startsWith(work.id + ":")) cursor.delete();
-          cursor.continue();
-        }
-      };
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
+    getSetting("fontSize", "medium").then(f => {
+      setFontSizeState(f);
+      applyFontSize(f);
     });
-    setWorks(w => w.filter(x => x.id !== work.id));
-    setConfirmDelete(null);
-  }
-
-  function applyTheme(t) {
-    const th = THEMES.find(x => x.id === t) || THEMES[0];
-    document.documentElement.style.setProperty("--bg", th.bg);
-    document.documentElement.style.setProperty("--surface",
-      t === "sepia" ? "#ede8df" : t === "light" ? "#f5f5f5" : "#252220");
-    document.documentElement.style.setProperty("--text", th.text);
-    document.documentElement.style.setProperty("--text-muted",
-      t === "dark" ? "#8a7f72" : "#9c8b78");
-    document.body.dataset.theme = t;
-  }
+  }, []);
 
   function applyFontSize(f) {
     const fs = FONT_SIZES.find(s => s.id === f) || FONT_SIZES[1];
     document.documentElement.style.setProperty("--reader-font-size", fs.size);
   }
 
-  async function handleTheme(t) { setThemeState(t); applyTheme(t); await setSetting("theme", t); }
-  async function handleFontSize(f) { setFontSizeState(f); applyFontSize(f); await setSetting("fontSize", f); }
+  async function handleTheme(t) {
+    setTheme(t);
+    await setSetting("theme", t);
+  }
 
-  async function handleLogout() {
-    setLoggingOut(true);
-    await supabase.auth.signOut();
-    // Auth context will detect signout and redirect to AuthScreen
+  async function handleFontSize(f) {
+    setFontSizeState(f);
+    applyFontSize(f);
+    await setSetting("fontSize", f);
   }
 
   // ── Settings panel ──
@@ -129,7 +102,7 @@ export default function ProfileView({ onPublish, onOpenBook }) {
         <div style={{
           display: "flex", alignItems: "center", gap: "12px",
           padding: "16px 20px 12px",
-          borderBottom: "1px solid rgba(139,111,71,0.1)",
+          borderBottom: "1px solid var(--border)",
         }}>
           <button onClick={() => setShowSettings(false)} style={{
             background: "none", border: "none", padding: "4px",
@@ -142,43 +115,28 @@ export default function ProfileView({ onPublish, onOpenBook }) {
         </div>
 
         <div style={{ padding: "20px 20px 40px" }}>
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Appearance</div>
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Appearance</div>
 
-          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "10px", border: "1px solid rgba(139,111,71,0.1)" }}>
+          {/* Theme */}
+          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "10px", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Theme</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Background colour while reading</div>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "6px" }}>
-              {THEMES.map(t => (
-                <button key={t.id} onClick={() => handleTheme(t.id)} style={{
-                  width: "44px", height: "44px", borderRadius: "10px", cursor: "pointer",
-                  background: t.bg,
-                  border: `2px solid ${theme === t.id ? "var(--accent)" : "rgba(139,111,71,0.25)"}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  WebkitTapHighlightColor: "transparent",
-                }}>
-                  <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: t.text, opacity: 0.6, display: "block" }} />
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              {THEMES.map(t => (
-                <span key={t.id} style={{
-                  width: "44px", textAlign: "center", fontSize: "11px",
-                  color: theme === t.id ? "var(--accent)" : "var(--text-muted)",
-                  fontWeight: theme === t.id ? "500" : "normal",
-                }}>{t.label}</span>
-              ))}
+            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>App and reading background</div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <ThemeTile id="night" label="Night" active={theme === "night"} onClick={() => handleTheme("night")} />
+              <ThemeTile id="sepia" label="Sepia" active={theme === "sepia"} onClick={() => handleTheme("sepia")} />
+              <ThemeTile id="paper" label="Paper" active={theme === "paper"} onClick={() => handleTheme("paper")} />
             </div>
           </div>
 
-          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid rgba(139,111,71,0.1)" }}>
+          {/* Font size */}
+          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Text size</div>
             <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Font size while reading</div>
             <div style={{ display: "flex", gap: "8px" }}>
               {FONT_SIZES.map(f => (
                 <button key={f.id} onClick={() => handleFontSize(f.id)} style={{
                   flex: 1, padding: "10px 0",
-                  background: fontSize === f.id ? "var(--accent)" : "rgba(139,111,71,0.08)",
+                  background: fontSize === f.id ? "var(--accent)" : "var(--surface-2)",
                   border: `1.5px solid ${fontSize === f.id ? "var(--accent)" : "transparent"}`,
                   borderRadius: "8px", fontSize: "14px",
                   color: fontSize === f.id ? "#fff" : "var(--text)",
@@ -188,12 +146,12 @@ export default function ProfileView({ onPublish, onOpenBook }) {
             </div>
           </div>
 
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "10px" }}>Account</div>
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Account</div>
           {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
             <div key={item} style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "15px 0",
-              borderBottom: i < arr.length - 1 ? "1px solid rgba(139,111,71,0.1)" : "none",
+              borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
               fontSize: "15px", color: "var(--text)", cursor: "pointer",
             }}>
               <span>{item}</span>
@@ -201,42 +159,17 @@ export default function ProfileView({ onPublish, onOpenBook }) {
             </div>
           ))}
 
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", margin: "24px 0 10px" }}>About</div>
+          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", margin: "24px 0 10px" }}>About</div>
           {[["BookWorm", "v1.0"], ["Books", "Project Gutenberg"]].map(([label, value]) => (
             <div key={label} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "13px 0", borderBottom: "1px solid rgba(139,111,71,0.1)",
+              padding: "13px 0", borderBottom: "1px solid var(--border)",
               fontSize: "14px", color: "var(--text)",
             }}>
               <span>{label}</span>
               <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{value}</span>
             </div>
           ))}
-
-          {/* Logout */}
-          <div style={{ marginTop: "40px" }}>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "1.5px solid rgba(180,60,40,0.3)",
-                background: "transparent",
-                color: loggingOut ? "var(--text-muted)" : "#c0392b",
-                fontSize: "15px",
-                fontWeight: "500",
-                fontFamily: "'DM Sans', system-ui, sans-serif",
-                cursor: loggingOut ? "default" : "pointer",
-                letterSpacing: "0.01em",
-                WebkitTapHighlightColor: "transparent",
-                transition: "opacity 0.15s ease",
-              }}
-            >
-              {loggingOut ? "Signing out…" : "Sign out"}
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -249,8 +182,6 @@ export default function ProfileView({ onPublish, onOpenBook }) {
       background: "var(--bg)", minHeight: "100%",
       paddingTop: "env(safe-area-inset-top, 44px)",
     }}>
-
-      {/* Top bar */}
       <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px 0" }}>
         <button onClick={() => setShowSettings(true)} style={{
           background: "none", border: "none", padding: "4px",
@@ -262,11 +193,10 @@ export default function ProfileView({ onPublish, onOpenBook }) {
       </div>
 
       <div style={{ padding: "12px 20px 0" }}>
-        {/* Avatar + name */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
           <div style={{
             width: "72px", height: "72px", borderRadius: "50%",
-            background: "var(--brand)",
+            background: "#6B5344",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}>
@@ -279,18 +209,17 @@ export default function ProfileView({ onPublish, onOpenBook }) {
           </div>
         </div>
 
-        {/* Stats */}
         <div style={{
           display: "flex",
-          borderTop: "1px solid rgba(139,111,71,0.12)",
-          borderBottom: "1px solid rgba(139,111,71,0.12)",
+          borderTop: "1px solid var(--border)",
+          borderBottom: "1px solid var(--border)",
           padding: "14px 0", marginBottom: "16px",
         }}>
-          {[{ value: String(works.length), label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
+          {[{ value: "0", label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
             .map(({ value, label }, i) => (
               <div key={label} style={{
                 flex: 1, textAlign: "center",
-                borderRight: i < 2 ? "1px solid rgba(139,111,71,0.12)" : "none",
+                borderRight: i < 2 ? "1px solid var(--border)" : "none",
               }}>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
                 <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
@@ -298,20 +227,22 @@ export default function ProfileView({ onPublish, onOpenBook }) {
             ))}
         </div>
 
-        {/* Action pills */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "28px" }}>
-          <button style={{
-            flex: 1, padding: "13px",
-            background: "var(--accent)", border: "none", borderRadius: "12px",
-            color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
-            WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
-          }} onClick={onPublish}>
+          <button
+            onClick={onPublish}
+            style={{
+              flex: 1, padding: "13px",
+              background: "var(--accent)", border: "none", borderRadius: "12px",
+              color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer",
+              WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
+            }}
+          >
             Publish
           </button>
           <button style={{
             flex: 1, padding: "13px",
             background: "none",
-            border: "1.5px solid rgba(139,111,71,0.25)",
+            border: "1.5px solid var(--border-2)",
             borderRadius: "12px",
             color: "var(--text)", fontSize: "15px", fontWeight: "500", cursor: "pointer",
             WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em",
@@ -320,70 +251,13 @@ export default function ProfileView({ onPublish, onOpenBook }) {
           </button>
         </div>
 
-        {/* Works grid */}
-        <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: "12px" }}>Works</div>
-        {works.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6 }}>
-            Nothing published yet. Tap Publish to share your first work.
-          </div>
-        ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "2px",
-            margin: "0 -20px",
-          }}>
-            {works.map(work => {
-              let pressTimer = null;
-              return (
-                <button
-                  key={work.id}
-                  onTouchStart={() => { pressTimer = setTimeout(() => setConfirmDelete(work), 600); }}
-                  onTouchEnd={() => clearTimeout(pressTimer)}
-                  onTouchMove={() => clearTimeout(pressTimer)}
-                  onClick={() => onOpenBook && onOpenBook(work.id)}
-                  style={{
-                    aspectRatio: "2/3",
-                    background: work.color || "var(--brand)",
-                    border: "none",
-                    cursor: "pointer",
-                    WebkitTapHighlightColor: "transparent",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "8px",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <span style={{
-                    fontFamily: "Georgia, serif",
-                    fontSize: "11px",
-                    color: "rgba(255,255,255,0.95)",
-                    textAlign: "center",
-                    lineHeight: 1.3,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}>{work.title}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {confirmDelete && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
-            <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>Delete "{confirmDelete.title}"?</div>
-              <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>This permanently removes it from your works.</div>
-              <button onClick={() => handleDeleteWork(confirmDelete)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "#ef5350", border: "none", color: "#fff", fontSize: "15px", fontWeight: "600", cursor: "pointer", marginBottom: "10px" }}>Delete</button>
-              <button onClick={() => setConfirmDelete(null)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "15px", cursor: "pointer" }}>Cancel</button>
-            </div>
-          </div>
-        )}
+        <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "16px" }}>Works</div>
+        <div style={{
+          textAlign: "center", padding: "48px 20px",
+          color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6,
+        }}>
+          Nothing published yet.{"\n"}Tap Publish to share your first work.
+        </div>
       </div>
     </div>
   );
