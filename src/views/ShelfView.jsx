@@ -123,7 +123,7 @@ export default function ShelfView({ onOpenBook }) {
       <style>{`
         .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
         .shelf-card { background: none; border: none; cursor: pointer; text-align: left; padding: 0; -webkit-tap-highlight-color: transparent; width: 100%; }
-        .shelf-cover { width: 100%; aspect-ratio: 2/3; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; box-shadow: 3px 4px 12px rgba(0,0,0,0.22); overflow: hidden; margin-bottom: 8px; }
+        .shelf-cover { width: 100%; height: 180px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; box-shadow: 3px 4px 12px rgba(0,0,0,0.22); overflow: hidden; margin-bottom: 8px; }
         .shelf-cover-title { font-family: Georgia, serif; font-size: 10px; color: rgba(255,255,255,0.95); text-align: center; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .shelf-cover-author { font-size: 8px; color: rgba(255,255,255,0.6); text-align: center; margin-top: 5px; }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
