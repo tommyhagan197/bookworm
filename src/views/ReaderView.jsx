@@ -47,10 +47,10 @@ async function saveProgress(bookId, globalPage, totalPages, chapter, pageInChapt
   };
 }
 
-const FONT_SIZES = [14, 16, 18, 20, 22];
-const LINE_HEIGHTS = [1.6, 1.75, 1.9];
+const FONT_SIZES = [14, 15, 16, 17, 18];
+const LINE_HEIGHTS = [1.7, 1.9, 2.1];
 const PADDING_H = 28;
-const PADDING_V = 72;
+const PADDING_V = 76;
 
 function paginateParas(paras, availableHeight, fontSize, lineHeight, paraGap) {
   if (!paras || paras.length === 0) return [];
@@ -101,7 +101,7 @@ export default function ReaderView({ bookId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [repaginating, setRepaginating] = useState(false);
   const [fontSizeIdx, setFontSizeIdx] = useState(2);
-  const [lineHeightIdx, setLineHeightIdx] = useState(1);
+  const [lineHeightIdx, setLineHeightIdx] = useState(2); // default Airy
   const [showSettings, setShowSettings] = useState(false);
   const [isLegacy, setIsLegacy] = useState(false);
   const [legacyPage, setLegacyPage] = useState(0);
@@ -116,7 +116,7 @@ export default function ReaderView({ bookId, onClose }) {
 
   const fontSize = FONT_SIZES[fontSizeIdx];
   const lineHeight = LINE_HEIGHTS[lineHeightIdx];
-  const availableHeight = window.innerHeight - PADDING_V * 2 - 20;
+  const availableHeight = window.innerHeight - PADDING_V * 2 - 60;
 
   // ── Compute global page total from chapter page counts ────────────────────
   function recomputeTotal(counts) {

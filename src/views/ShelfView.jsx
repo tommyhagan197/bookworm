@@ -2,13 +2,19 @@ import { useState, useEffect } from "react";
 import { openDB } from "../db/idb";
 
 const COVER_COLORS = [
-  { bg: "#6B5344" }, { bg: "#4A6741" }, { bg: "#2D5A7B" }, { bg: "#7B4A6B" },
-  { bg: "#8B6234" }, { bg: "#3D6B6B" }, { bg: "#704214" }, { bg: "#4A5A7B" },
+  { bg: "#6B5344", spine: "#4a3228" },
+  { bg: "#4A6741", spine: "#2e4228" },
+  { bg: "#2D5A7B", spine: "#1a3a52" },
+  { bg: "#7B4A6B", spine: "#522e47" },
+  { bg: "#8B6234", spine: "#5c3f1e" },
+  { bg: "#3D6B6B", spine: "#234444" },
+  { bg: "#704214", spine: "#4a2a0a" },
+  { bg: "#4A5A7B", spine: "#2e3a52" },
 ];
 
 function coverColor(bookId) {
   const hash = bookId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return COVER_COLORS[hash % COVER_COLORS.length].bg;
+  return COVER_COLORS[hash % COVER_COLORS.length];
 }
 
 async function getAllBooks() {
@@ -37,6 +43,131 @@ async function deleteBook(bookId) {
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
+}
+
+function BookCover({ book }) {
+  const colors = coverColor(book.id);
+  const progress = book.progress || 0;
+
+  return (
+    <div style={{
+      width: "100%",
+      aspectRatio: "2/3",
+      borderRadius: 6,
+      overflow: "hidden",
+      display: "flex",
+      boxShadow: "4px 6px 16px rgba(0,0,0,0.28), inset -3px 0 8px rgba(0,0,0,0.15)",
+      marginBottom: 8,
+      position: "relative",
+    }}>
+      {/* Spine */}
+      <div style={{
+        width: 14,
+        background: colors.spine,
+        flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          width: 1,
+          height: "60%",
+          background: "rgba(255,255,255,0.08)",
+        }}/>
+      </div>
+
+      {/* Cover face */}
+      <div style={{
+        flex: 1,
+        background: colors.bg,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "14px 10px",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* Subtle texture overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%, rgba(0,0,0,0.12) 100%)",
+          pointerEvents: "none",
+        }}/>
+
+        {/* Decorative top line */}
+        <div style={{
+          position: "absolute", top: 10, left: 12, right: 12,
+          height: 1, background: "rgba(255,255,255,0.2)",
+        }}/>
+
+        {/* Title */}
+        <div style={{
+          fontFamily: "'Lora', Georgia, serif",
+          fontSize: 11,
+          fontWeight: 600,
+          color: "rgba(255,255,255,0.95)",
+          textAlign: "center",
+          lineHeight: 1.4,
+          letterSpacing: "0.02em",
+          zIndex: 1,
+          marginBottom: 8,
+          display: "-webkit-box",
+          WebkitLineClamp: 5,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}>
+          {book.title}
+        </div>
+
+        {/* Divider */}
+        <div style={{
+          width: 24, height: 1,
+          background: "rgba(255,255,255,0.3)",
+          marginBottom: 8, zIndex: 1,
+        }}/>
+
+        {/* Author */}
+        {book.author && (
+          <div style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: 8,
+            color: "rgba(255,255,255,0.6)",
+            textAlign: "center",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            zIndex: 1,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}>
+            {book.author}
+          </div>
+        )}
+
+        {/* Decorative bottom line */}
+        <div style={{
+          position: "absolute", bottom: 10, left: 12, right: 12,
+          height: 1, background: "rgba(255,255,255,0.2)",
+        }}/>
+
+        {/* Progress indicator */}
+        {progress > 0 && progress < 1 && (
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            height: 3, background: "rgba(0,0,0,0.2)",
+          }}>
+            <div style={{
+              width: Math.round(progress * 100) + "%",
+              height: "100%",
+              background: "rgba(255,255,255,0.5)",
+            }}/>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function ShelfView({ onOpenBook }) {
@@ -79,30 +210,20 @@ export default function ShelfView({ onOpenBook }) {
       <p className="view-subhead">{books.length} {books.length === 1 ? "book" : "books"}</p>
       <div className="shelf-grid">
         {books.map((book) => {
-          const bg = book.color || coverColor(book.id);
-          const progress = book.progress || 0;
           let pressTimer = null;
           return (
             <button
               key={book.id}
               className="shelf-card"
               onTouchStart={() => { pressTimer = setTimeout(() => handleLongPress(book), 600); }}
-              onTouchEnd={() => { clearTimeout(pressTimer); }}
-              onTouchMove={() => { clearTimeout(pressTimer); }}
+              onTouchEnd={() => clearTimeout(pressTimer)}
+              onTouchMove={() => clearTimeout(pressTimer)}
               onClick={() => onOpenBook && onOpenBook(book.id)}
             >
-              <div className="shelf-cover" style={{ background: bg }}>
-                <span className="shelf-cover-title">{book.title}</span>
-                {book.author && <span className="shelf-cover-author">{book.author}</span>}
-              </div>
+              <BookCover book={book} />
               <div className="shelf-meta">
                 <span className="shelf-title">{book.title}</span>
                 {book.author && <span className="shelf-author">{book.author}</span>}
-                {progress > 0 && (
-                  <div className="shelf-progress-bar">
-                    <div className="shelf-progress-fill" style={{ width: Math.round(progress * 100) + "%" }} />
-                  </div>
-                )}
               </div>
             </button>
           );
@@ -110,27 +231,22 @@ export default function ShelfView({ onOpenBook }) {
       </div>
 
       {confirmDelete && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100, padding: "0 0 40px" }}>
-          <div style={{ background: "var(--surface)", borderRadius: "20px", padding: "24px", width: "calc(100% - 32px)", maxWidth: "400px", textAlign: "center" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "17px", marginBottom: "6px" }}>Remove "{confirmDelete.title}"?</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>This removes it from your shelf. You can re-add it anytime.</div>
-            <button onClick={() => handleDelete(confirmDelete)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "#ef5350", border: "none", color: "#fff", fontSize: "15px", fontWeight: "600", cursor: "pointer", marginBottom: "10px" }}>Remove</button>
-            <button onClick={() => setConfirmDelete(null)} style={{ width: "100%", padding: "14px", borderRadius: "12px", background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "15px", cursor: "pointer" }}>Cancel</button>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:100, padding:"0 0 40px" }}>
+          <div style={{ background:"var(--surface)", borderRadius:20, padding:24, width:"calc(100% - 32px)", maxWidth:400, textAlign:"center" }}>
+            <div style={{ fontFamily:"Georgia, serif", fontSize:17, marginBottom:6 }}>Remove "{confirmDelete.title}"?</div>
+            <div style={{ fontSize:13, color:"var(--text-muted)", marginBottom:20 }}>This removes it from your shelf. You can re-add it anytime.</div>
+            <button onClick={() => handleDelete(confirmDelete)} style={{ width:"100%", padding:14, borderRadius:12, background:"#ef5350", border:"none", color:"#fff", fontSize:15, fontWeight:600, cursor:"pointer", marginBottom:10 }}>Remove</button>
+            <button onClick={() => setConfirmDelete(null)} style={{ width:"100%", padding:14, borderRadius:12, background:"transparent", border:"none", color:"var(--text-muted)", fontSize:15, cursor:"pointer" }}>Cancel</button>
           </div>
         </div>
       )}
 
       <style>{`
-        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
+        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 16px; align-items: start; }
         .shelf-card { background: none; border: none; cursor: pointer; text-align: left; padding: 0; -webkit-tap-highlight-color: transparent; width: 100%; }
-        .shelf-cover { width: 100%; height: 180px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; box-shadow: 3px 4px 12px rgba(0,0,0,0.22); overflow: hidden; margin-bottom: 8px; }
-        .shelf-cover-title { font-family: Georgia, serif; font-size: 10px; color: rgba(255,255,255,0.95); text-align: center; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-        .shelf-cover-author { font-size: 8px; color: rgba(255,255,255,0.6); text-align: center; margin-top: 5px; }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
-        .shelf-title { font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .shelf-author { font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .shelf-progress-bar { height: 2px; background: rgba(139,111,71,0.2); border-radius: 2px; margin-top: 5px; overflow: hidden; }
-        .shelf-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
+        .shelf-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Lora', Georgia, serif; }
+        .shelf-author { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Sans', sans-serif; }
       `}</style>
     </div>
   );
