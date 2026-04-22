@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getSetting, setSetting } from "../db/idb";
 import { useTheme } from "../App";
+import { useAuth } from "../auth/AuthContext";
 
 const FONT_SIZES = [
   { id: "small",  label: "S",  size: "15px" },
@@ -65,6 +66,7 @@ function ThemeTile({ id, label, active, onClick }) {
 
 export default function ProfileView({ onPublish }) {
   const { theme, setTheme } = useTheme();
+  const { profile, signOut, session } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSizeState] = useState("medium");
 
@@ -90,6 +92,11 @@ export default function ProfileView({ onPublish }) {
     applyFontSize(f);
     await setSetting("fontSize", f);
   }
+
+  // Get display name from profile or email
+  const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "Reader";
+  const handle = "@" + (profile?.display_name || session?.user?.email?.split("@")[0] || "reader").toLowerCase().replace(/\s+/g, "");
+  const initials = displayName.charAt(0).toUpperCase();
 
   // ── Settings panel ──
   if (showSettings) {
@@ -117,7 +124,6 @@ export default function ProfileView({ onPublish }) {
         <div style={{ padding: "20px 20px 40px" }}>
           <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Appearance</div>
 
-          {/* Theme */}
           <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "10px", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Theme</div>
             <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>App and reading background</div>
@@ -128,7 +134,6 @@ export default function ProfileView({ onPublish }) {
             </div>
           </div>
 
-          {/* Font size */}
           <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid var(--border)" }}>
             <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Text size</div>
             <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Font size while reading</div>
@@ -147,17 +152,24 @@ export default function ProfileView({ onPublish }) {
           </div>
 
           <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Account</div>
-          {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
-            <div key={item} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "15px 0",
-              borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
-              fontSize: "15px", color: "var(--text)", cursor: "pointer",
-            }}>
-              <span>{item}</span>
-              <ChevronRight />
+
+          <div style={{ background: "var(--surface)", borderRadius: "12px", marginBottom: "10px", border: "1px solid var(--border)", overflow: "hidden" }}>
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
+              <div style={{ fontSize: "12px", color: "var(--text-ghost)", marginBottom: "2px" }}>Signed in as</div>
+              <div style={{ fontSize: "14px", color: "var(--text)" }}>{session?.user?.email}</div>
             </div>
-          ))}
+            {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
+              <div key={item} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "15px 16px",
+                borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none",
+                fontSize: "15px", color: "var(--text)", cursor: "pointer",
+              }}>
+                <span>{item}</span>
+                <ChevronRight />
+              </div>
+            ))}
+          </div>
 
           <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", margin: "24px 0 10px" }}>About</div>
           {[["BookWorm", "v1.0"], ["Books", "Project Gutenberg"]].map(([label, value]) => (
@@ -170,6 +182,20 @@ export default function ProfileView({ onPublish }) {
               <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{value}</span>
             </div>
           ))}
+
+          <button
+            onClick={signOut}
+            style={{
+              width: "100%", marginTop: "24px", padding: "14px",
+              background: "none", border: "1.5px solid #ef5350",
+              borderRadius: "12px", color: "#ef5350",
+              fontSize: "15px", fontWeight: "500", cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            Sign out
+          </button>
         </div>
       </div>
     );
@@ -200,12 +226,12 @@ export default function ProfileView({ onPublish }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
           }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#fff", fontWeight: "normal" }}>T</span>
+            <span style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#fff", fontWeight: "normal" }}>{initials}</span>
           </div>
           <div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "var(--text)", lineHeight: 1.2 }}>Tommy Hagan</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>@tommyhagan</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.4 }}>Founder · BookWorm</div>
+            <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "var(--text)", lineHeight: 1.2 }}>{displayName}</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>{handle}</div>
+            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.4 }}>{session?.user?.email}</div>
           </div>
         </div>
 

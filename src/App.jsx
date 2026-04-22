@@ -6,6 +6,8 @@ import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
 import PublishView from "./views/PublishView";
+import AuthScreen from "./auth/AuthScreen";
+import { useAuth } from "./auth/AuthContext";
 import "./App.css";
 
 export const ThemeContext = createContext({ theme: "night", setTheme: () => {} });
@@ -18,6 +20,7 @@ function loadTheme() {
 }
 
 export default function App() {
+  const { session } = useAuth();
   const [activeTab, setActiveTab] = useState("library");
   const [readerBookId, setReaderBookId] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
@@ -36,6 +39,33 @@ export default function App() {
     setShowPublish(false);
     setActiveTab("shelf");
     setReaderBookId(bookId);
+  }
+
+  // Still loading session
+  if (session === undefined) {
+    return (
+      <div style={{
+        minHeight: "100dvh",
+        background: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{
+          fontFamily: "'Lora', Georgia, serif",
+          fontSize: 22,
+          color: "#f0ece4",
+          letterSpacing: "-0.01em",
+        }}>
+          BookWorm
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in — show auth screen
+  if (!session) {
+    return <AuthScreen />;
   }
 
   function renderTab() {
