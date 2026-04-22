@@ -40,7 +40,7 @@ body {
 /* ── Bottom Nav ── */
 .bottom-nav { position: fixed;
   bottom: 0;
-  padding-bottom: env(safe-area-inset-bottom, 34px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
