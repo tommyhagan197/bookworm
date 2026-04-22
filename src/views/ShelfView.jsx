@@ -53,6 +53,7 @@ function BookCover({ book }) {
     <div style={{
       width: "100%",
       aspectRatio: "2/3",
+      maxHeight: 220,
       borderRadius: 6,
       overflow: "hidden",
       display: "flex",
@@ -242,7 +243,7 @@ export default function ShelfView({ onOpenBook }) {
       )}
 
       <style>{`
-        .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 16px; align-items: start; }
+       .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 14px; align-items: start; width: 100%; }
         .shelf-card { background: none; border: none; cursor: pointer; text-align: left; padding: 0; -webkit-tap-highlight-color: transparent; width: 100%; }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
         .shelf-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Lora', Georgia, serif; }

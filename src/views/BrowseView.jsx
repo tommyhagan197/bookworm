@@ -150,7 +150,7 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
           <div className="browse-card-body">
             <div className="browse-card-title">Holy Bible</div>
             <div className="browse-card-author">King James Version</div>
-           <button className="browse-btn" onClick={e => { e.stopPropagation(); onOpenBible && onOpenBible(); }}>Open Bible</button>
+          <button className="browse-btn" onClick={e => { e.stopPropagation(); onOpenBible && onOpenBible(); }}>+ Add to Shelf</button>
           </div>
         </div>
       )}
