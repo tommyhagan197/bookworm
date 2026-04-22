@@ -1,9 +1,6 @@
 // src/db/idb.js
-// Shared IndexedDB layer. All views import from here.
-
 const DB_NAME = "bookworm";
-const DB_VERSION = 3;
-
+const DB_VERSION = 4;
 let _db = null;
 
 export function openDB() {
@@ -18,6 +15,8 @@ export function openDB() {
         db.createObjectStore("pages", { keyPath: "key" });
       if (!db.objectStoreNames.contains("settings"))
         db.createObjectStore("settings", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("chapters"))
+        db.createObjectStore("chapters", { keyPath: "key" });
     };
     req.onsuccess = () => { _db = req.result; resolve(_db); };
     req.onerror = () => reject(req.error);
