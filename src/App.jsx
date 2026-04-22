@@ -18,7 +18,7 @@ export function useTheme() { return useContext(ThemeContext); }
 const THEMES = ["night", "sepia", "paper"];
 
 function loadTheme() {
-  try { return localStorage.getItem("bw-theme") || "night"; } catch { return "night"; }
+  try { return localStorage.getItem("bw-theme") || "paper"; } catch { return "paper"; }
 }
 
 export default function App() {

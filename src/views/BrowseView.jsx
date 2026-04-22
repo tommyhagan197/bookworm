@@ -196,7 +196,7 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
                       <svg className="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeWidth="2.5" strokeLinecap="round"/>
                       </svg>
-                    ) : already ? "✓ Read now" : "+ Add to Shelf"}
+                    ) : already ? "✓ Open book" : "+ Add to Shelf"}
                   </button>
                 </div>
               </div>
