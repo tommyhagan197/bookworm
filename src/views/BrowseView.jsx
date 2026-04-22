@@ -20,15 +20,12 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
-  const [downloading, setDownloading] = useState({}); // bookId -> true
-  const [inLibrary, setInLibrary] = useState({}); // gutenbergId -> bookId
+  const [downloading, setDownloading] = useState({});
+  const [inLibrary, setInLibrary] = useState({});
   const searchTimer = useRef(null);
   const abortRef = useRef(null);
 
-  // Load popular on mount
-  useEffect(() => {
-    fetchPopular();
-  }, []);
+  useEffect(() => { fetchPopular(); }, []);
 
   async function fetchPopular() {
     setLoading(true);
@@ -38,7 +35,6 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
       const res = await fetch(`${GUTENDEX_BASE}?ids=${ids}`);
       if (!res.ok) throw new Error("Gutendex returned " + res.status);
       const data = await res.json();
-      // Re-sort to match POPULAR_IDS order
       const map = {};
       data.results.forEach(b => { map[b.id] = b; });
       const sorted = POPULAR_IDS.map(id => map[id]).filter(Boolean);
@@ -94,32 +90,23 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
 
   async function download(book) {
     const gutId = book.id;
-    if (inLibrary[gutId]) {
-      onOpenBook && onOpenBook(inLibrary[gutId]);
-      return;
-    }
-
-    // Find best EPUB URL
+    if (inLibrary[gutId]) { onOpenBook && onOpenBook(inLibrary[gutId]); return; }
     const formats = book.formats || {};
     const epubUrl = formats["application/epub+zip"] || Object.entries(formats).find(([k]) => k.includes("epub"))?.[1];
     if (!epubUrl) { alert("No EPUB available for this book."); return; }
-
     setDownloading(d => ({ ...d, [gutId]: true }));
-
     try {
       const proxyUrl = `${PROXY_BASE}/${encodeURIComponent(epubUrl)}`;
       const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error("Proxy returned " + res.status);
       const buffer = await res.arrayBuffer();
       if (!buffer || buffer.byteLength < 1000) throw new Error("Empty EPUB");
-
       const author = book.authors?.[0]?.name || "Unknown";
       const record = await processEpubBuffer(buffer, book.title + ".epub", {
         gutenbergId: gutId,
         metaTitle: book.title,
         metaAuthor: author
       });
-
       setInLibrary(s => ({ ...s, [gutId]: record.id }));
     } catch (e) {
       console.error("[Browse] download failed:", e);
@@ -133,27 +120,6 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
     <div className="view-container">
       <h1 className="view-header">Free Classics</h1>
       <p className="view-subhead">70,000+ public domain books</p>
-
-      {/* Bible Featured Card */}
-      {onOpenBible && (
-        <div className="bible-featured-card" onClick={onOpenBible}>
-          <div className="bible-featured-left">
-            <div className="bible-featured-cross">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="8" y="1" width="4" height="18" rx="1.5" fill="white"/>
-                <rect x="1" y="7" width="18" height="4" rx="1.5" fill="white"/>
-              </svg>
-            </div>
-            <div>
-              <div className="bible-featured-title">Holy Bible</div>
-              <div className="bible-featured-sub">King James Version · Free</div>
-            </div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M6 3l5 5-5 5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      )}
 
       {/* Search */}
       <div className="browse-search-wrap">
@@ -171,6 +137,25 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
           <button className="browse-search-clear" onClick={clearSearch}>✕</button>
         )}
       </div>
+
+      {/* Bible row — sits right above the book list */}
+      {onOpenBible && (
+        <div className="bible-row-card" onClick={onOpenBible}>
+          <div className="bible-row-cover">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="9" y="2" width="4" height="18" rx="2" fill="rgba(255,255,255,0.92)"/>
+              <rect x="2" y="8" width="18" height="4" rx="2" fill="rgba(255,255,255,0.92)"/>
+            </svg>
+          </div>
+          <div className="bible-row-body">
+            <div className="bible-row-title">Holy Bible</div>
+            <div className="bible-row-sub">King James Version · Free</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 3l5 5-5 5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
 
       {loading && (
         <div className="browse-loading">
@@ -223,50 +208,50 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
       )}
 
       <style>{`
-
-        .bible-featured-card {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background: linear-gradient(135deg, #3a2410 0%, #6b4423 100%);
-          border-radius: 14px;
-          padding: 16px 18px;
-          margin-bottom: 20px;
-          cursor: pointer;
-          -webkit-tap-highlight-color: transparent;
-          transition: opacity 0.15s;
-        }
-        .bible-featured-card:active { opacity: 0.85; }
-        .bible-featured-left {
+        .bible-row-card {
           display: flex;
           align-items: center;
           gap: 14px;
+          background: linear-gradient(135deg, #3a2410 0%, #6b4423 100%);
+          border-radius: 12px;
+          padding: 12px;
+          margin-bottom: 12px;
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          transition: opacity 0.15s;
+          border: 1px solid rgba(255,255,255,0.06);
         }
-        .bible-featured-cross {
-          width: 40px;
-          height: 40px;
-          background: rgba(255,255,255,0.12);
-          border-radius: 10px;
+        .bible-row-card:active { opacity: 0.82; }
+        .bible-row-cover {
+          width: 64px;
+          flex-shrink: 0;
+          aspect-ratio: 2/3;
+          border-radius: 5px;
+          background: rgba(0,0,0,0.25);
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
+          box-shadow: 2px 3px 8px rgba(0,0,0,0.35);
         }
-        .bible-featured-title {
-          font-family: 'Lora', Georgia, serif;
-          font-size: 17px;
-          font-weight: 600;
-          color: white;
-          margin-bottom: 2px;
+        .bible-row-body {
+          flex: 1;
+          min-width: 0;
         }
-        .bible-featured-sub {
+        .bible-row-title {
+          font-family: Georgia, serif;
+          font-size: 15px;
+          color: rgba(255,255,255,0.95);
+          line-height: 1.3;
+          margin-bottom: 3px;
+        }
+        .bible-row-sub {
           font-size: 12px;
-          color: rgba(255,255,255,0.6);
+          color: rgba(255,255,255,0.5);
           font-family: 'DM Sans', sans-serif;
         }
         .browse-search-wrap {
           position: relative;
-          margin-bottom: 20px;
+          margin-bottom: 14px;
         }
         .browse-search-icon {
           position: absolute;
