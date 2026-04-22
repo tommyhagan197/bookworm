@@ -194,11 +194,10 @@ export default function BibleView({ onOpenChapter }) {
         <div style={{ fontSize:11, fontWeight:600, letterSpacing:'0.08em', color:'var(--text-muted)', fontFamily:"'DM Sans', sans-serif", marginBottom:12, textTransform:'uppercase' }}>Browse</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           {[
-            { t:'OT', label:'Old Testament', count:'39 books', icon:'📜' },
-            { t:'NT', label:'New Testament', count:'27 books', icon:'✝️' },
+           { t:'OT', label:'Old Testament', count:'39 books' },
+            { t:'NT', label:'New Testament', count:'27 books' },
           ].map(({ t, label, count, icon }) => (
             <button key={t} onClick={() => { setTestament(t); setView('books'); }} style={quickCardStyle}>
-              <span style={{ fontSize:22, marginBottom:6 }}>{icon}</span>
               <span style={{ fontFamily:"'Lora', Georgia, serif", fontSize:15, color:'var(--text)', fontWeight:600 }}>{label}</span>
               <span style={{ fontSize:12, color:'var(--text-muted)', fontFamily:"'DM Sans', sans-serif", marginTop:2 }}>{count}</span>
             </button>
