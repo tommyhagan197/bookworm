@@ -6,6 +6,8 @@ import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
 import PublishView from "./views/PublishView";
+import BibleView from "./views/BibleView";
+import BibleReaderView from "./views/BibleReaderView";
 import AuthScreen from "./auth/AuthScreen";
 import { useAuth } from "./auth/AuthContext";
 import "./App.css";
@@ -26,6 +28,10 @@ export default function App() {
   const [showPublish, setShowPublish] = useState(false);
   const [theme, setThemeState] = useState(loadTheme);
 
+  // Bible state
+  const [showBible, setShowBible] = useState(false);
+  const [bibleChapter, setBibleChapter] = useState(null); // { book, chapterIndex, allBooks }
+
   function setTheme(t) {
     if (!THEMES.includes(t)) return;
     setThemeState(t);
@@ -39,6 +45,24 @@ export default function App() {
     setShowPublish(false);
     setActiveTab("shelf");
     setReaderBookId(bookId);
+  }
+
+  function openBible() {
+    setBibleChapter(null);
+    setShowBible(true);
+  }
+
+  function closeBible() {
+    setShowBible(false);
+    setBibleChapter(null);
+  }
+
+  function openBibleChapter(chapterInfo) {
+    setBibleChapter(chapterInfo);
+  }
+
+  function navigateBibleChapter(chapterInfo) {
+    setBibleChapter(chapterInfo);
   }
 
   // Still loading session
@@ -71,11 +95,11 @@ export default function App() {
   function renderTab() {
     switch (activeTab) {
       case "shelf":     return <ShelfView onOpenBook={openBook} />;
-      case "library":   return <BrowseView onOpenBook={openBook} />;
+      case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;
       case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} />;
-      default:          return <BrowseView onOpenBook={openBook} />;
+      default:          return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
     }
   }
 
@@ -134,7 +158,70 @@ export default function App() {
 
         {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
         {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
+
+        {/* Bible overlay */}
+        {showBible && !bibleChapter && (
+          <div className="bible-overlay">
+            <div className="bible-overlay-topbar">
+              <button className="bible-overlay-close" onClick={closeBible}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 4l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Library
+              </button>
+            </div>
+            <div className="bible-overlay-content">
+              <BibleView onOpenChapter={openBibleChapter} />
+            </div>
+          </div>
+        )}
+
+        {showBible && bibleChapter && (
+          <BibleReaderView
+            book={bibleChapter.book}
+            chapterIndex={bibleChapter.chapterIndex}
+            allBooks={bibleChapter.allBooks}
+            onClose={closeBible}
+            onNavigate={navigateBibleChapter}
+          />
+        )}
       </div>
+
+      <style>{`
+        .bible-overlay {
+          position: fixed;
+          inset: 0;
+          background: var(--bg);
+          z-index: 200;
+          display: flex;
+          flex-direction: column;
+        }
+        .bible-overlay-topbar {
+          display: flex;
+          align-items: center;
+          padding: 56px 16px 12px;
+          border-bottom: 1px solid rgba(139,111,71,0.12);
+        }
+        .bible-overlay-close {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          background: none;
+          border: none;
+          color: var(--accent);
+          font-size: 15px;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          padding: 4px 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .bible-overlay-content {
+          flex: 1;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          padding: 0 16px 40px;
+        }
+      `}</style>
     </ThemeContext.Provider>
   );
 }
