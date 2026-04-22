@@ -138,13 +138,13 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
         )}
       </div>
 
-      {/* Bible row — sits right above the book list */}
+      {/* Bible row */}
       {onOpenBible && (
         <div className="bible-row-card" onClick={onOpenBible}>
           <div className="bible-row-cover">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="9" y="2" width="4" height="18" rx="2" fill="rgba(255,255,255,0.92)"/>
-              <rect x="2" y="8" width="18" height="4" rx="2" fill="rgba(255,255,255,0.92)"/>
+            <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8.5" y="0" width="3.5" height="28" rx="1.5" fill="rgba(255,255,255,0.88)"/>
+              <rect x="1" y="7.5" width="18" height="3.5" rx="1.5" fill="rgba(255,255,255,0.88)"/>
             </svg>
           </div>
           <div className="bible-row-body">
@@ -212,7 +212,7 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
           display: flex;
           align-items: center;
           gap: 14px;
-          background: linear-gradient(135deg, #3a2410 0%, #6b4423 100%);
+          background: #4a2e10;
           border-radius: 12px;
           padding: 12px;
           margin-bottom: 12px;
@@ -227,7 +227,7 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
           flex-shrink: 0;
           aspect-ratio: 2/3;
           border-radius: 5px;
-          background: rgba(0,0,0,0.25);
+          background: rgba(0,0,0,0.3);
           display: flex;
           align-items: center;
           justify-content: center;
