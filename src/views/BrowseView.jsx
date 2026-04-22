@@ -140,20 +140,18 @@ export default function BrowseView({ onOpenBook, onOpenBible }) {
 
       {/* Bible row */}
       {onOpenBible && (
-        <div className="bible-row-card" onClick={onOpenBible}>
-          <div className="bible-row-cover">
+        <div className="browse-card" style={{ cursor: "pointer" }} onClick={onOpenBible}>
+          <div className="browse-cover" style={{ background: "#4a2e10", alignItems: "center", justifyContent: "center" }}>
             <svg width="20" height="28" viewBox="0 0 20 28" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="8.5" y="0" width="3.5" height="28" rx="1.5" fill="rgba(255,255,255,0.88)"/>
               <rect x="1" y="7.5" width="18" height="3.5" rx="1.5" fill="rgba(255,255,255,0.88)"/>
             </svg>
           </div>
-          <div className="bible-row-body">
-            <div className="bible-row-title">Holy Bible</div>
-            <div className="bible-row-sub">King James Version · Free</div>
+          <div className="browse-card-body">
+            <div className="browse-card-title">Holy Bible</div>
+            <div className="browse-card-author">King James Version</div>
+            <button className="browse-btn in-library" style={{ pointerEvents: "none" }}>✓ Free</button>
           </div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M6 3l5 5-5 5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
         </div>
       )}
 
