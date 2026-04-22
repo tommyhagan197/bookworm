@@ -94,7 +94,7 @@ export default function App() {
 
   function renderTab() {
     switch (activeTab) {
-      case "shelf":     return <ShelfView onOpenBook={openBook} />;
+      case "shelf":     return <ShelfView onOpenBook={openBook} onOpenBible={openBible} />;
       case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;

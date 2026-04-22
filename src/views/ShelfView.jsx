@@ -171,7 +171,7 @@ function BookCover({ book }) {
   );
 }
 
-export default function ShelfView({ onOpenBook }) {
+export default function ShelfView({ onOpenBook, onOpenBible }) {
   const [books, setBooks] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
@@ -219,7 +219,10 @@ export default function ShelfView({ onOpenBook }) {
               onTouchStart={() => { pressTimer = setTimeout(() => handleLongPress(book), 600); }}
               onTouchEnd={() => clearTimeout(pressTimer)}
               onTouchMove={() => clearTimeout(pressTimer)}
-              onClick={() => onOpenBook && onOpenBook(book.id)}
+              onClick={() => {
+                if (book.isBible) { onOpenBible && onOpenBible(); return; }
+                onOpenBook && onOpenBook(book.id);
+              }}
             >
               <BookCover book={book} />
               <div className="shelf-meta">
@@ -243,7 +246,7 @@ export default function ShelfView({ onOpenBook }) {
       )}
 
       <style>{`
-       .shelf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 12px; align-items: start; box-sizing: border-box; }
+      .shelf-grid { display: grid; grid-template-columns: calc(50% - 6px) calc(50% - 6px); gap: 20px 12px; align-items: start; }
         .shelf-card { background: none; border: none; cursor: pointer; text-align: left; padding: 0; -webkit-tap-highlight-color: transparent; width: 100%; }
         .shelf-meta { display: flex; flex-direction: column; gap: 2px; }
         .shelf-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Lora', Georgia, serif; }
