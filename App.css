@@ -1,0 +1,285 @@
+/* ── THEME: NIGHT (default) ── */
+:root, [data-theme="night"] {
+  --bg:           #000000;
+  --surface:      #0a0a0a;
+  --surface-2:    #111111;
+  --surface-3:    #1a1a1a;
+  --border:       #151515;
+  --border-2:     #222222;
+  --text:         #f0ece4;
+  --text-muted:   #5a5145;
+  --text-ghost:   #2a2a2a;
+  --accent:       #E07C3A;
+  --accent-deep:  #C0602A;
+  --nav-bg:       #070707;
+  --nav-border:   #111111;
+  --reader-bg:    #0d0d0d;
+  --reader-text:  #7a6f63;
+  --reader-head:  #f0ece4;
+}
+
+/* ── THEME: SEPIA ── */
+[data-theme="sepia"] {
+  --bg:           #F5F0E8;
+  --surface:      #EDE7DA;
+  --surface-2:    #E6DFD0;
+  --surface-3:    #DDD5C3;
+  --border:       #DDD5C6;
+  --border-2:     #CEC4B0;
+  --text:         #2C1A0E;
+  --text-muted:   #7a6354;
+  --text-ghost:   #B5A898;
+  --accent:       #E07C3A;
+  --accent-deep:  #C0602A;
+  --nav-bg:       #EDE7DA;
+  --nav-border:   #DDD5C6;
+  --reader-bg:    #F5F0E8;
+  --reader-text:  #7a6354;
+  --reader-head:  #2C1A0E;
+}
+
+/* ── THEME: PAPER ── */
+[data-theme="paper"] {
+  --bg:           #ffffff;
+  --surface:      #f8f8f8;
+  --surface-2:    #f2f2f2;
+  --surface-3:    #ebebeb;
+  --border:       #e8e8e8;
+  --border-2:     #dddddd;
+  --text:         #1a1a1a;
+  --text-muted:   #666666;
+  --text-ghost:   #c0c0c0;
+  --accent:       #E07C3A;
+  --accent-deep:  #C0602A;
+  --nav-bg:       #f8f8f8;
+  --nav-border:   #ebebeb;
+  --reader-bg:    #ffffff;
+  --reader-text:  #555555;
+  --reader-head:  #1a1a1a;
+}
+
+/* ── GLOBAL RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "DM Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* ── APP SHELL ── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  background: var(--nav-bg);
+  border-top: 0.5px solid var(--nav-border);
+  padding: 8px 4px env(safe-area-inset-bottom, 12px);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  color: var(--text-ghost);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+}
+
+.nav-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.nav-btn span {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.nav-btn.active {
+  color: var(--accent);
+}
+
+.nav-center-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.nav-center-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 0.5px solid var(--border-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-bottom: -6px;
+}
+
+.nav-center-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-center-btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.nav-center-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-ghost);
+}
+
+.nav-center-label.active {
+  color: var(--accent);
+}
+
+/* ── SHARED VIEW STYLES ── */
+.view-container {
+  padding: 56px 16px 24px;
+  min-height: 100%;
+}
+
+.view-header {
+  font-family: Georgia, "Lora", serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.view-subhead {
+  font-size: 12px;
+  color: var(--text-ghost);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 16px;
+  color: var(--text-muted);
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+}
+
+.empty-state p {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ── THEME SWITCHER (used in settings panel) ── */
+.theme-switcher {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.theme-tile {
+  flex: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  background: none;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-tile.active {
+  border-color: var(--accent);
+}
+
+.theme-tile-preview {
+  padding: 8px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-tile-line {
+  height: 5px;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.theme-tile-line.short {
+  width: 55%;
+}
+
+.theme-tile-label {
+  padding: 5px 8px 7px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  border-top: 0.5px solid;
+}
+
+/* Night tile */
+.theme-tile-night .theme-tile-preview { background: #0a0a0a; }
+.theme-tile-night .theme-tile-line { background: #3a3228; }
+.theme-tile-night .theme-tile-label { background: #070707; color: #2a2a2a; border-color: #111; }
+.theme-tile-night.active .theme-tile-label { color: #E07C3A; }
+
+/* Sepia tile */
+.theme-tile-sepia .theme-tile-preview { background: #F5F0E8; }
+.theme-tile-sepia .theme-tile-line { background: #c4b8a4; }
+.theme-tile-sepia .theme-tile-label { background: #EDE7DA; color: #b5a898; border-color: #DDD5C6; }
+.theme-tile-sepia.active .theme-tile-label { color: #C0602A; }
+
+/* Paper tile */
+.theme-tile-paper .theme-tile-preview { background: #ffffff; }
+.theme-tile-paper .theme-tile-line { background: #d8d8d8; }
+.theme-tile-paper .theme-tile-label { background: #f8f8f8; color: #c0c0c0; border-color: #ebebeb; }
+.theme-tile-paper.active .theme-tile-label { color: #E07C3A; }
