@@ -40,13 +40,12 @@ body {
 /* ── Bottom Nav ── */
 .bottom-nav { position: fixed;
   bottom: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 430px;
-  height: calc(var(--nav-h) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--surface);
   border-top: 1px solid rgba(224, 124, 58, 0.15);
   display: flex;
