@@ -62,11 +62,10 @@ function WorkCover({ work }) {
   const uid = work.id.replace(/[^a-z0-9]/gi, "").slice(0, 12);
 
   if (!cd) {
-    const color = "#6B5344";
     const [l1, l2] = splitTitle(title);
     return (
       <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <defs><linearGradient id={`fg_${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={color+"99"}/></linearGradient></defs>
+        <defs><linearGradient id={`fg_${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6B5344"/><stop offset="100%" stopColor="#6B534499"/></linearGradient></defs>
         <rect width="200" height="280" fill={`url(#fg_${uid})`}/>
         <rect width="200" height="4" fill="rgba(255,255,255,0.25)"/>
         <text x="16" y="160" fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l1}</text>
@@ -176,6 +175,87 @@ function WorkCover({ work }) {
   );
 }
 
+// Work card with cover + ... menu
+function WorkCard({ work, onOpen, onDeleted, onEdited }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete(e) {
+    e.stopPropagation();
+    if (deleting) return;
+    setDeleting(true);
+    const { error } = await supabase.from("works").delete().eq("id", work.id);
+    if (!error) onDeleted(work.id);
+    else { setDeleting(false); setShowMenu(false); }
+  }
+
+  return (
+    <div style={{ cursor:"pointer", position:"relative" }}>
+      {/* Cover — tapping opens reader */}
+      <div
+        onClick={onOpen}
+        style={{ width:"100%", aspectRatio:"200/280", borderRadius:"6px", overflow:"hidden", boxShadow:"2px 4px 12px rgba(0,0,0,0.18)", marginBottom:"8px", position:"relative" }}
+      >
+        <WorkCover work={work} />
+
+        {/* ... button overlaid on top-right of cover */}
+        <button
+          onClick={e => { e.stopPropagation(); setShowMenu(v => !v); }}
+          style={{
+            position:"absolute", top:"8px", right:"8px",
+            width:"28px", height:"28px",
+            background:"rgba(0,0,0,0.45)",
+            border:"none", borderRadius:"50%",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor:"pointer", WebkitTapHighlightColor:"transparent",
+            backdropFilter:"blur(4px)",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+            <circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Dropdown menu */}
+      {showMenu && (
+        <>
+          <div onClick={() => setShowMenu(false)} style={{ position:"fixed", inset:0, zIndex:50 }}/>
+          <div style={{ position:"absolute", top:"8px", right:"8px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"10px", boxShadow:"0 4px 20px rgba(0,0,0,0.18)", minWidth:"130px", zIndex:51, overflow:"hidden" }}>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(false); onOpen(); }}
+              style={{ width:"100%", padding:"12px 14px", background:"none", border:"none", borderBottom:"1px solid var(--border)", textAlign:"left", fontSize:"14px", color:"var(--text)", cursor:"pointer", WebkitTapHighlightColor:"transparent", display:"flex", alignItems:"center", gap:"8px" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Read
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setShowMenu(false); onEdited && onEdited(work); }}
+              style={{ width:"100%", padding:"12px 14px", background:"none", border:"none", borderBottom:"1px solid var(--border)", textAlign:"left", fontSize:"14px", color:"var(--text)", cursor:"pointer", WebkitTapHighlightColor:"transparent", display:"flex", alignItems:"center", gap:"8px" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ width:"100%", padding:"12px 14px", background:"none", border:"none", textAlign:"left", fontSize:"14px", color:"#ef5350", cursor: deleting?"default":"pointer", WebkitTapHighlightColor:"transparent", opacity: deleting?0.6:1, display:"flex", alignItems:"center", gap:"8px" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          </div>
+        </>
+      )}
+
+      <div style={{ fontSize:"13px", color:"var(--text)", fontWeight:"500", lineHeight:1.3 }}>{work.title}</div>
+      <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px" }}>
+        {new Date(work.created_at).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})}
+      </div>
+    </div>
+  );
+}
+
 function ThemeTile({ id, label, active, onClick }) {
   const configs = {
     night: { preview:"#0a0a0a", line:"#3a3228", labelBg:"#070707", labelColor: active?"#E07C3A":"#2a2a2a", border:"#111" },
@@ -211,8 +291,7 @@ export default function ProfileView({ onPublish, onOpenWork }) {
   async function loadWorks() {
     setLoading(true);
     const { data, error } = await supabase
-      .from("works")
-      .select("*")
+      .from("works").select("*")
       .eq("author_id", session.user.id)
       .order("created_at", { ascending: false });
     if (!error && data) setWorks(data);
@@ -276,9 +355,7 @@ export default function ProfileView({ onPublish, onOpenWork }) {
               <span>{label}</span><span style={{ fontSize:"13px", color:"var(--text-muted)" }}>{value}</span>
             </div>
           ))}
-          <button onClick={signOut} style={{ width:"100%", marginTop:"24px", padding:"14px", background:"none", border:"1.5px solid #ef5350", borderRadius:"12px", color:"#ef5350", fontSize:"15px", fontWeight:"500", cursor:"pointer", fontFamily:"'DM Sans', sans-serif", WebkitTapHighlightColor:"transparent" }}>
-            Sign out
-          </button>
+          <button onClick={signOut} style={{ width:"100%", marginTop:"24px", padding:"14px", background:"none", border:"1.5px solid #ef5350", borderRadius:"12px", color:"#ef5350", fontSize:"15px", fontWeight:"500", cursor:"pointer", fontFamily:"'DM Sans', sans-serif", WebkitTapHighlightColor:"transparent" }}>Sign out</button>
         </div>
       </div>
     );
@@ -327,15 +404,13 @@ export default function ProfileView({ onPublish, onOpenWork }) {
         ) : (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"16px", paddingBottom:"40px", maxWidth:"500px" }}>
             {works.map(work => (
-              <div key={work.id} onClick={() => onOpenWork && onOpenWork(work)} style={{ cursor:"pointer" }}>
-                <div style={{ width:"100%", aspectRatio:"200/280", borderRadius:"6px", overflow:"hidden", boxShadow:"2px 4px 12px rgba(0,0,0,0.18)", marginBottom:"8px" }}>
-                  <WorkCover work={work} />
-                </div>
-                <div style={{ fontSize:"13px", color:"var(--text)", fontWeight:"500", lineHeight:1.3 }}>{work.title}</div>
-                <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px" }}>
-                  {new Date(work.created_at).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})}
-                </div>
-              </div>
+              <WorkCard
+                key={work.id}
+                work={work}
+                onOpen={() => onOpenWork && onOpenWork(work)}
+                onDeleted={id => setWorks(ws => ws.filter(w => w.id !== id))}
+                onEdited={work => onOpenWork && onOpenWork(work)}
+              />
             ))}
           </div>
         )}
