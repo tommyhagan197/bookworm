@@ -12,7 +12,6 @@ function generateId() {
   return "pub_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
 }
 
-// ── PALETTE ────────────────────────────────────────────────────────────────
 const PALETTE = [
   { id: "walnut",   label: "Walnut",   color: "#6B5344", dark: "#3D2B1F" },
   { id: "ink",      label: "Ink",      color: "#2E3F5C", dark: "#1A2537" },
@@ -28,8 +27,6 @@ const PALETTE = [
   { id: "cream",    label: "Cream",    color: "#D4C09A", dark: "#A08B5A" },
 ];
 
-// ── TEMPLATES ───────────────────────────────────────────────────────────────
-// Each template defines how many color slots it uses and how to render SVG
 const TEMPLATES = [
   {
     id: "gradient",
@@ -231,7 +228,6 @@ function splitTitle(title) {
   return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
-// ── COVER PREVIEW (small thumbnail) ────────────────────────────────────────
 function CoverThumb({ template, colors, title, author, showAuthor, titlePos, selected, onClick }) {
   return (
     <button
@@ -259,7 +255,6 @@ function CoverThumb({ template, colors, title, author, showAuthor, titlePos, sel
   );
 }
 
-// ── COLOR SLOT ──────────────────────────────────────────────────────────────
 function ColorSlot({ index, color, active, onClick }) {
   return (
     <button
@@ -285,21 +280,20 @@ function ColorSlot({ index, color, active, onClick }) {
   );
 }
 
-// ── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function PublishView({ onClose, onPublished }) {
-  const { profile } = useAuth();
-  const authorName = profile?.full_name || profile?.username || "Anonymous";
+  const { profile, session } = useAuth();
 
-  // Step: "compose" | "cover"
+  // Resolve author name: display_name is the correct column, fall back to email prefix
+  const authorName = profile?.display_name
+    || session?.user?.email?.split("@")[0]
+    || "Anonymous";
+
   const [step, setStep] = useState("compose");
-
-  // Compose state
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
 
-  // Cover state
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
   const [slotColors, setSlotColors] = useState([PALETTE[0], PALETTE[7], PALETTE[4]]);
   const [activeSlot, setActiveSlot] = useState(0);
@@ -309,9 +303,7 @@ export default function PublishView({ onClose, onPublished }) {
   const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
   const canContinue = title.trim().length > 0 && body.trim().length > 0;
 
-  function handleSlotTap(idx) {
-    setActiveSlot(idx);
-  }
+  function handleSlotTap(idx) { setActiveSlot(idx); }
 
   function handlePickColor(paletteColor) {
     const updated = [...slotColors];
@@ -331,7 +323,6 @@ export default function PublishView({ onClose, onPublished }) {
     try {
       const id = generateId();
 
-      // Build cover data
       const coverData = {
         templateId: selectedTemplate.id,
         colors: colorsForTemplate().map(c => c.id),
@@ -367,12 +358,13 @@ export default function PublishView({ onClose, onPublished }) {
 
       onPublished(id);
     } catch (e) {
+      console.error("Publish error:", e);
       setError("Something went wrong. Please try again.");
       setPublishing(false);
     }
   }
 
-  // ── COVER STUDIO SCREEN ──────────────────────────────────────────────────
+  // ── COVER STUDIO ─────────────────────────────────────────────────────────
   if (step === "cover") {
     const slotsNeeded = selectedTemplate.slots;
     const previewColors = colorsForTemplate();
@@ -385,7 +377,6 @@ export default function PublishView({ onClose, onPublished }) {
         paddingTop: "env(safe-area-inset-top, 44px)",
         paddingBottom: "env(safe-area-inset-bottom, 20px)",
       }}>
-        {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "14px 20px",
@@ -409,7 +400,7 @@ export default function PublishView({ onClose, onPublished }) {
               padding: "7px 16px",
               color: "#fff",
               fontSize: "14px", fontWeight: "500",
-              cursor: "pointer",
+              cursor: publishing ? "default" : "pointer",
               WebkitTapHighlightColor: "transparent",
               transition: "all 0.15s",
               opacity: publishing ? 0.6 : 1,
@@ -419,10 +410,7 @@ export default function PublishView({ onClose, onPublished }) {
           </button>
         </div>
 
-        {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-
-          {/* Layout picker */}
           <div style={{ padding: "14px 0 4px 20px", fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Layout</div>
           <div style={{ display: "flex", gap: 12, padding: "4px 20px 16px", overflowX: "auto" }}>
             {TEMPLATES.map(t => (
@@ -442,9 +430,8 @@ export default function PublishView({ onClose, onPublished }) {
 
           <div style={{ height: "0.5px", background: "rgba(139,111,71,0.12)", margin: "0 20px" }}/>
 
-          {/* Color slots */}
           <div style={{ padding: "14px 0 6px 20px", fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-            {slotsNeeded === 1 ? "Color" : `Colors — tap to select`}
+            {slotsNeeded === 1 ? "Color" : "Colors — tap to select"}
           </div>
           <div style={{ display: "flex", gap: 12, padding: "0 20px 12px", alignItems: "flex-start" }}>
             {Array.from({ length: slotsNeeded }).map((_, i) => (
@@ -458,7 +445,6 @@ export default function PublishView({ onClose, onPublished }) {
             ))}
           </div>
 
-          {/* Palette picker */}
           <div style={{
             display: "flex", flexWrap: "wrap", gap: 10,
             padding: "6px 20px 16px",
@@ -477,8 +463,7 @@ export default function PublishView({ onClose, onPublished }) {
                   border: slotColors[activeSlot]?.id === p.id ? "3px solid var(--accent)" : "2px solid rgba(255,255,255,0.3)",
                   cursor: "pointer",
                   WebkitTapHighlightColor: "transparent",
-                  padding: 0,
-                  flexShrink: 0,
+                  padding: 0, flexShrink: 0,
                 }}
               />
             ))}
@@ -486,7 +471,6 @@ export default function PublishView({ onClose, onPublished }) {
 
           <div style={{ height: "0.5px", background: "rgba(139,111,71,0.12)", margin: "16px 20px 0" }}/>
 
-          {/* Title position */}
           <div style={{ padding: "14px 0 6px 20px", fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Title position</div>
           <div style={{ display: "flex", margin: "0 20px 16px", background: "rgba(255,255,255,0.5)", border: "0.5px solid rgba(139,111,71,0.2)", borderRadius: 8, overflow: "hidden" }}>
             {["top", "middle", "lower"].map(pos => (
@@ -513,7 +497,6 @@ export default function PublishView({ onClose, onPublished }) {
 
           <div style={{ height: "0.5px", background: "rgba(139,111,71,0.12)", margin: "0 20px" }}/>
 
-          {/* Author name toggle */}
           <div style={{ padding: "14px 0 6px 20px", fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Author name</div>
           <div
             onClick={() => setShowAuthor(v => !v)}
@@ -543,13 +526,11 @@ export default function PublishView({ onClose, onPublished }) {
 
           <div style={{ height: "0.5px", background: "rgba(139,111,71,0.12)", margin: "0 20px" }}/>
 
-          {/* Big preview */}
           <div style={{ padding: "14px 0 6px 20px", fontSize: 10, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase" }}>Preview</div>
           <div style={{ display: "flex", justifyContent: "center", padding: "8px 20px 24px" }}>
             <div style={{
               width: 160, height: 224,
-              borderRadius: 6,
-              overflow: "hidden",
+              borderRadius: 6, overflow: "hidden",
               boxShadow: "4px 6px 18px rgba(0,0,0,0.25)",
             }}>
               {selectedTemplate.render(previewColors, title || "Untitled", authorName, showAuthor, titlePos)}
@@ -573,7 +554,6 @@ export default function PublishView({ onClose, onPublished }) {
       paddingTop: "env(safe-area-inset-top, 44px)",
       paddingBottom: "env(safe-area-inset-bottom, 20px)",
     }}>
-      {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "14px 20px",
@@ -606,7 +586,6 @@ export default function PublishView({ onClose, onPublished }) {
         </button>
       </div>
 
-      {/* Compose area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0" }}>
         <input
           value={title}
@@ -641,7 +620,6 @@ export default function PublishView({ onClose, onPublished }) {
         />
       </div>
 
-      {/* Footer */}
       <div style={{
         padding: "10px 20px",
         borderTop: "1px solid rgba(139,111,71,0.1)",

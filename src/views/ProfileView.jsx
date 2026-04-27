@@ -93,9 +93,9 @@ export default function ProfileView({ onPublish }) {
     await setSetting("fontSize", f);
   }
 
-  // Get display name from profile or email
+  // display_name is the correct column — fall back to email prefix
   const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "Reader";
-  const handle = "@" + (profile?.display_name || session?.user?.email?.split("@")[0] || "reader").toLowerCase().replace(/\s+/g, "");
+  const handle = "@" + displayName.toLowerCase().replace(/\s+/g, "");
   const initials = displayName.charAt(0).toUpperCase();
 
   // ── Settings panel ──
@@ -282,7 +282,7 @@ export default function ProfileView({ onPublish }) {
           textAlign: "center", padding: "48px 20px",
           color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6,
         }}>
-          Nothing published yet.{"\n"}Tap Publish to share your first work.
+          Nothing published yet. Tap Publish to share your first work.
         </div>
       </div>
     </div>
