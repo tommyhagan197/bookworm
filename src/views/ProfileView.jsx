@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { getSetting, setSetting, dbGetAll } from "../db/idb";
+import { getSetting, setSetting } from "../db/idb";
 import { useTheme } from "../App";
 import { useAuth } from "../auth/AuthContext";
+import { supabase } from "../lib/supabase";
 
 const FONT_SIZES = [
   { id: "small",  label: "S",  size: "15px" },
@@ -54,24 +55,18 @@ function splitTitle(title) {
   return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
-// Renders the actual saved cover using coverData
-function WorkCover({ book }) {
-  const title = book.title || "Untitled";
-  const author = book.author || "";
-  const cd = book.coverData;
-  const uid = book.id.replace(/[^a-z0-9]/gi, "");
+function WorkCover({ work }) {
+  const title = work.title || "Untitled";
+  const author = work.author_name || "";
+  const cd = work.cover_data;
+  const uid = work.id.replace(/[^a-z0-9]/gi, "").slice(0, 12);
 
-  // If no coverData, fallback gradient
   if (!cd) {
-    const color = book.color || "#6B5344";
+    const color = "#6B5344";
     const [l1, l2] = splitTitle(title);
     return (
       <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <defs>
-          <linearGradient id={`fg_${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={color + "99"}/>
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id={`fg_${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={color}/><stop offset="100%" stopColor={color+"99"}/></linearGradient></defs>
         <rect width="200" height="280" fill={`url(#fg_${uid})`}/>
         <rect width="200" height="4" fill="rgba(255,255,255,0.25)"/>
         <text x="16" y="160" fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l1}</text>
@@ -91,127 +86,87 @@ function WorkCover({ book }) {
   const [l1, l2] = splitTitle(title);
   const ty = tp === "top" ? 60 : tp === "middle" ? 110 : 160;
 
-  if (templateId === "gradient") {
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <defs>
-          <linearGradient id={`tg_${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={c0.color}/><stop offset="100%" stopColor={c0.dark}/>
-          </linearGradient>
-        </defs>
-        <rect width="200" height="280" fill={`url(#tg_${uid})`}/>
-        <rect width="200" height="4" fill="rgba(255,255,255,0.25)"/>
-        <line x1="16" y1={ty+30} x2="100" y2={ty+30} stroke="rgba(255,255,255,0.25)" strokeWidth="0.5"/>
-        <text x="16" y={ty} fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="16" y={ty+24} fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="16" y={ty+44} fontFamily="Georgia,serif" fontSize="11" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "split") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 120 : 200;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="120" height="280" fill={c0.color}/>
-        <rect x="120" width="80" height="280" fill={c1.color}/>
-        <rect width="200" height="3" fill="rgba(255,255,255,0.2)"/>
-        <text x="12" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="12" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="12" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "bands") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 150 : 230;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="100" fill={c0.color}/>
-        <rect y="100" width="200" height="6" fill="rgba(255,255,255,0.3)"/>
-        <rect y="106" width="200" height="174" fill={c1.color}/>
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "slash") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 150 : 220;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.color}/>
-        <polygon points="0,0 140,0 0,190" fill={c1.color}/>
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "arc") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 150 : 220;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.color}/>
-        <path d="M0,280 Q200,130 200,0 L200,280 Z" fill={c1.dark||c1.color}/>
-        <circle cx="50" cy="80" r="55" fill={c2.color} opacity="0.9"/>
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "dots") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 150 : 220;
-    const dots = [];
-    for (let r=0;r<5;r++) for (let c=0;c<5;c++) dots.push({cx:24+c*40,cy:24+r*40});
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.color}/>
-        {dots.map((d,i)=><circle key={i} cx={d.cx} cy={d.cy} r="10" fill="rgba(255,255,255,0.18)"/>)}
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "stripes") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 150 : 220;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.color}/>
-        {[-40,-20,0,20,40,60,80,100,120].map((o,i)=><line key={i} x1={o} y1="0" x2={o+280} y2="280" stroke="rgba(255,255,255,0.1)" strokeWidth="18"/>)}
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "frame") {
-    const ty2 = tp === "top" ? 60 : tp === "middle" ? 140 : 210;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.dark||c0.color}/>
-        <rect x="10" y="10" width="180" height="260" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"/>
-        <rect x="16" y="16" width="168" height="248" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
-        <text x="24" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="24" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="24" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  if (templateId === "chevron") {
-    const ty2 = tp === "top" ? 50 : tp === "middle" ? 140 : 220;
-    return (
-      <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect width="200" height="280" fill={c0.dark||c0.color}/>
-        <polygon points="0,0 200,0 200,140" fill={c0.color}/>
-        <polygon points="0,280 200,280 0,140" fill={c0.color}/>
-        <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
-        {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
-        {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
-      </svg>
-    );
-  }
-  // fallback
+  if (templateId === "gradient") return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <defs><linearGradient id={`tg_${uid}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={c0.color}/><stop offset="100%" stopColor={c0.dark}/></linearGradient></defs>
+      <rect width="200" height="280" fill={`url(#tg_${uid})`}/>
+      <rect width="200" height="4" fill="rgba(255,255,255,0.25)"/>
+      <line x1="16" y1={ty+30} x2="100" y2={ty+30} stroke="rgba(255,255,255,0.25)" strokeWidth="0.5"/>
+      <text x="16" y={ty} fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="16" y={ty+24} fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="16" y={ty+44} fontFamily="Georgia,serif" fontSize="11" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );
+  if (templateId === "split") { const ty2=tp==="top"?50:tp==="middle"?120:200; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="120" height="280" fill={c0.color}/><rect x="120" width="80" height="280" fill={c1.color}/>
+      <rect width="200" height="3" fill="rgba(255,255,255,0.2)"/>
+      <text x="12" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="12" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="12" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "bands") { const ty2=tp==="top"?50:tp==="middle"?150:230; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="100" fill={c0.color}/><rect y="100" width="200" height="6" fill="rgba(255,255,255,0.3)"/><rect y="106" width="200" height="174" fill={c1.color}/>
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "slash") { const ty2=tp==="top"?50:tp==="middle"?150:220; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.color}/><polygon points="0,0 140,0 0,190" fill={c1.color}/>
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "arc") { const ty2=tp==="top"?50:tp==="middle"?150:220; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.color}/><path d="M0,280 Q200,130 200,0 L200,280 Z" fill={c1.dark||c1.color}/><circle cx="50" cy="80" r="55" fill={c2.color} opacity="0.9"/>
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "dots") { const ty2=tp==="top"?50:tp==="middle"?150:220; const dots=[]; for(let r=0;r<5;r++) for(let col=0;col<5;col++) dots.push({cx:24+col*40,cy:24+r*40}); return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.color}/>
+      {dots.map((d,i)=><circle key={i} cx={d.cx} cy={d.cy} r="10" fill="rgba(255,255,255,0.18)"/>)}
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "stripes") { const ty2=tp==="top"?50:tp==="middle"?150:220; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.color}/>
+      {[-40,-20,0,20,40,60,80,100,120].map((o,i)=><line key={i} x1={o} y1="0" x2={o+280} y2="280" stroke="rgba(255,255,255,0.1)" strokeWidth="18"/>)}
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "frame") { const ty2=tp==="top"?60:tp==="middle"?140:210; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.dark||c0.color}/>
+      <rect x="10" y="10" width="180" height="260" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"/>
+      <rect x="16" y="16" width="168" height="248" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
+      <text x="24" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="24" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="24" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
+  if (templateId === "chevron") { const ty2=tp==="top"?50:tp==="middle"?140:220; return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <rect width="200" height="280" fill={c0.dark||c0.color}/>
+      <polygon points="0,0 200,0 200,140" fill={c0.color}/><polygon points="0,280 200,280 0,140" fill={c0.color}/>
+      <text x="14" y={ty2} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l1}</text>
+      {l2 && <text x="14" y={ty2+22} fontFamily="Georgia,serif" fontSize="20" fill="white" fontWeight="bold">{l2}</text>}
+      {showAuthor && <text x="14" y={ty2+(l2?40:20)} fontFamily="Georgia,serif" fontSize="10" fill="rgba(255,255,255,0.75)">{author}</text>}
+    </svg>
+  );}
   return (
     <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
       <rect width="200" height="280" fill={c0.color}/>
@@ -223,51 +178,45 @@ function WorkCover({ book }) {
 
 function ThemeTile({ id, label, active, onClick }) {
   const configs = {
-    night: { preview: "#0a0a0a", line: "#3a3228", labelBg: "#070707", labelColor: active ? "#E07C3A" : "#2a2a2a", border: "#111" },
-    sepia: { preview: "#F5F0E8", line: "#c4b8a4", labelBg: "#EDE7DA", labelColor: active ? "#C0602A" : "#b5a898", border: "#DDD5C6" },
-    paper: { preview: "#ffffff", line: "#d8d8d8", labelBg: "#f8f8f8", labelColor: active ? "#E07C3A" : "#c0c0c0", border: "#ebebeb" },
+    night: { preview:"#0a0a0a", line:"#3a3228", labelBg:"#070707", labelColor: active?"#E07C3A":"#2a2a2a", border:"#111" },
+    sepia: { preview:"#F5F0E8", line:"#c4b8a4", labelBg:"#EDE7DA", labelColor: active?"#C0602A":"#b5a898", border:"#DDD5C6" },
+    paper: { preview:"#ffffff", line:"#d8d8d8", labelBg:"#f8f8f8", labelColor: active?"#E07C3A":"#c0c0c0", border:"#ebebeb" },
   };
   const c = configs[id];
   return (
-    <button onClick={onClick} style={{
-      flex: 1, borderRadius: "10px", overflow: "hidden", padding: 0, cursor: "pointer",
-      border: `${active ? "1.5px" : "0.5px"} solid ${active ? "#E07C3A" : c.border}`,
-      background: "none", WebkitTapHighlightColor: "transparent",
-      transition: "border-color 0.15s ease",
-    }}>
-      <div style={{ background: c.preview, padding: "10px 8px 8px", display: "flex", flexDirection: "column", gap: "5px" }}>
-        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.7 }} />
-        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.5, width: "60%" }} />
-        <div style={{ height: "5px", borderRadius: "3px", background: c.line, opacity: 0.7 }} />
+    <button onClick={onClick} style={{ flex:1, borderRadius:"10px", overflow:"hidden", padding:0, cursor:"pointer", border:`${active?"1.5px":"0.5px"} solid ${active?"#E07C3A":c.border}`, background:"none", WebkitTapHighlightColor:"transparent", transition:"border-color 0.15s ease" }}>
+      <div style={{ background:c.preview, padding:"10px 8px 8px", display:"flex", flexDirection:"column", gap:"5px" }}>
+        <div style={{ height:"5px", borderRadius:"3px", background:c.line, opacity:0.7 }}/>
+        <div style={{ height:"5px", borderRadius:"3px", background:c.line, opacity:0.5, width:"60%" }}/>
+        <div style={{ height:"5px", borderRadius:"3px", background:c.line, opacity:0.7 }}/>
       </div>
-      <div style={{
-        background: c.labelBg, borderTop: `0.5px solid ${c.border}`,
-        padding: "5px 8px 7px", textAlign: "center",
-        fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase",
-        color: c.labelColor, fontWeight: active ? "500" : "400",
-        transition: "color 0.15s ease",
-      }}>{label}</div>
+      <div style={{ background:c.labelBg, borderTop:`0.5px solid ${c.border}`, padding:"5px 8px 7px", textAlign:"center", fontSize:"10px", letterSpacing:"0.08em", textTransform:"uppercase", color:c.labelColor, fontWeight:active?"500":"400", transition:"color 0.15s ease" }}>{label}</div>
     </button>
   );
 }
 
-export default function ProfileView({ onPublish, onOpenBook }) {
+export default function ProfileView({ onPublish, onOpenWork }) {
   const { theme, setTheme } = useTheme();
   const { profile, signOut, session } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSizeState] = useState("medium");
-  const [publishedWorks, setPublishedWorks] = useState([]);
+  const [works, setWorks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getSetting("fontSize", "medium").then(f => { setFontSizeState(f); applyFontSize(f); });
-    loadPublishedWorks();
-  }, []);
+    if (session?.user?.id) loadWorks();
+  }, [session?.user?.id]);
 
-  async function loadPublishedWorks() {
-    const allBooks = await dbGetAll("books");
-    const works = allBooks.filter(b => b.type === "published");
-    works.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-    setPublishedWorks(works);
+  async function loadWorks() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("works")
+      .select("*")
+      .eq("author_id", session.user.id)
+      .order("created_at", { ascending: false });
+    if (!error && data) setWorks(data);
+    setLoading(false);
   }
 
   function applyFontSize(f) {
@@ -284,60 +233,50 @@ export default function ProfileView({ onPublish, onOpenBook }) {
 
   if (showSettings) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", background: "var(--bg)", minHeight: "100%", paddingTop: "env(safe-area-inset-top, 44px)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 20px 12px", borderBottom: "1px solid var(--border)" }}>
-          <button onClick={() => setShowSettings(false)} style={{ background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--text-muted)", WebkitTapHighlightColor: "transparent", display: "flex" }}>
-            <BackIcon />
-          </button>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "var(--text)" }}>Settings</div>
+      <div style={{ display:"flex", flexDirection:"column", background:"var(--bg)", minHeight:"100%", paddingTop:"env(safe-area-inset-top, 44px)" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"12px", padding:"16px 20px 12px", borderBottom:"1px solid var(--border)" }}>
+          <button onClick={() => setShowSettings(false)} style={{ background:"none", border:"none", padding:"4px", cursor:"pointer", color:"var(--text-muted)", WebkitTapHighlightColor:"transparent", display:"flex" }}><BackIcon /></button>
+          <div style={{ fontFamily:"Georgia, serif", fontSize:"18px", color:"var(--text)" }}>Settings</div>
         </div>
-        <div style={{ padding: "20px 20px 40px" }}>
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Appearance</div>
-          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "10px", border: "1px solid var(--border)" }}>
-            <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Theme</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>App and reading background</div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <ThemeTile id="night" label="Night" active={theme === "night"} onClick={() => handleTheme("night")} />
-              <ThemeTile id="sepia" label="Sepia" active={theme === "sepia"} onClick={() => handleTheme("sepia")} />
-              <ThemeTile id="paper" label="Paper" active={theme === "paper"} onClick={() => handleTheme("paper")} />
+        <div style={{ padding:"20px 20px 40px" }}>
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", marginBottom:"10px" }}>Appearance</div>
+          <div style={{ background:"var(--surface)", borderRadius:"12px", padding:"16px", marginBottom:"10px", border:"1px solid var(--border)" }}>
+            <div style={{ fontSize:"15px", color:"var(--text)", fontWeight:"500", marginBottom:"2px" }}>Theme</div>
+            <div style={{ fontSize:"12px", color:"var(--text-muted)", marginBottom:"14px" }}>App and reading background</div>
+            <div style={{ display:"flex", gap:"10px" }}>
+              <ThemeTile id="night" label="Night" active={theme==="night"} onClick={() => handleTheme("night")}/>
+              <ThemeTile id="sepia" label="Sepia" active={theme==="sepia"} onClick={() => handleTheme("sepia")}/>
+              <ThemeTile id="paper" label="Paper" active={theme==="paper"} onClick={() => handleTheme("paper")}/>
             </div>
           </div>
-          <div style={{ background: "var(--surface)", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid var(--border)" }}>
-            <div style={{ fontSize: "15px", color: "var(--text)", fontWeight: "500", marginBottom: "2px" }}>Text size</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "14px" }}>Font size while reading</div>
-            <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"12px", padding:"16px", marginBottom:"24px", border:"1px solid var(--border)" }}>
+            <div style={{ fontSize:"15px", color:"var(--text)", fontWeight:"500", marginBottom:"2px" }}>Text size</div>
+            <div style={{ fontSize:"12px", color:"var(--text-muted)", marginBottom:"14px" }}>Font size while reading</div>
+            <div style={{ display:"flex", gap:"8px" }}>
               {FONT_SIZES.map(f => (
-                <button key={f.id} onClick={() => handleFontSize(f.id)} style={{
-                  flex: 1, padding: "10px 0",
-                  background: fontSize === f.id ? "var(--accent)" : "var(--surface-2)",
-                  border: `1.5px solid ${fontSize === f.id ? "var(--accent)" : "transparent"}`,
-                  borderRadius: "8px", fontSize: "14px",
-                  color: fontSize === f.id ? "#fff" : "var(--text)",
-                  cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                }}>{f.label}</button>
+                <button key={f.id} onClick={() => handleFontSize(f.id)} style={{ flex:1, padding:"10px 0", background: fontSize===f.id?"var(--accent)":"var(--surface-2)", border:`1.5px solid ${fontSize===f.id?"var(--accent)":"transparent"}`, borderRadius:"8px", fontSize:"14px", color: fontSize===f.id?"#fff":"var(--text)", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}>{f.label}</button>
               ))}
             </div>
           </div>
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "10px" }}>Account</div>
-          <div style={{ background: "var(--surface)", borderRadius: "12px", marginBottom: "10px", border: "1px solid var(--border)", overflow: "hidden" }}>
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
-              <div style={{ fontSize: "12px", color: "var(--text-ghost)", marginBottom: "2px" }}>Signed in as</div>
-              <div style={{ fontSize: "14px", color: "var(--text)" }}>{session?.user?.email}</div>
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", marginBottom:"10px" }}>Account</div>
+          <div style={{ background:"var(--surface)", borderRadius:"12px", marginBottom:"10px", border:"1px solid var(--border)", overflow:"hidden" }}>
+            <div style={{ padding:"14px 16px", borderBottom:"1px solid var(--border)" }}>
+              <div style={{ fontSize:"12px", color:"var(--text-ghost)", marginBottom:"2px" }}>Signed in as</div>
+              <div style={{ fontSize:"14px", color:"var(--text)" }}>{session?.user?.email}</div>
             </div>
-            {["Reading Preferences", "Notifications", "Privacy"].map((item, i, arr) => (
-              <div key={item} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 16px", borderBottom: i < arr.length - 1 ? "1px solid var(--border)" : "none", fontSize: "15px", color: "var(--text)", cursor: "pointer" }}>
-                <span>{item}</span><ChevronRight />
+            {["Reading Preferences","Notifications","Privacy"].map((item,i,arr) => (
+              <div key={item} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"15px 16px", borderBottom: i<arr.length-1?"1px solid var(--border)":"none", fontSize:"15px", color:"var(--text)", cursor:"pointer" }}>
+                <span>{item}</span><ChevronRight/>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", margin: "24px 0 10px" }}>About</div>
-          {[["BookWorm", "v1.0"], ["Books", "Project Gutenberg"]].map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: "1px solid var(--border)", fontSize: "14px", color: "var(--text)" }}>
-              <span>{label}</span>
-              <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{value}</span>
+          <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", margin:"24px 0 10px" }}>About</div>
+          {[["BookWorm","v1.0"],["Books","Project Gutenberg"]].map(([label,value]) => (
+            <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"13px 0", borderBottom:"1px solid var(--border)", fontSize:"14px", color:"var(--text)" }}>
+              <span>{label}</span><span style={{ fontSize:"13px", color:"var(--text-muted)" }}>{value}</span>
             </div>
           ))}
-          <button onClick={signOut} style={{ width: "100%", marginTop: "24px", padding: "14px", background: "none", border: "1.5px solid #ef5350", borderRadius: "12px", color: "#ef5350", fontSize: "15px", fontWeight: "500", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", WebkitTapHighlightColor: "transparent" }}>
+          <button onClick={signOut} style={{ width:"100%", marginTop:"24px", padding:"14px", background:"none", border:"1.5px solid #ef5350", borderRadius:"12px", color:"#ef5350", fontSize:"15px", fontWeight:"500", cursor:"pointer", fontFamily:"'DM Sans', sans-serif", WebkitTapHighlightColor:"transparent" }}>
             Sign out
           </button>
         </div>
@@ -346,59 +285,55 @@ export default function ProfileView({ onPublish, onOpenBook }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", background: "var(--bg)", minHeight: "100%", paddingTop: "env(safe-area-inset-top, 44px)" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 20px 0" }}>
-        <button onClick={() => setShowSettings(true)} style={{ background: "none", border: "none", padding: "4px", cursor: "pointer", color: "var(--text-muted)", WebkitTapHighlightColor: "transparent", display: "flex" }}>
-          <GearIcon />
-        </button>
+    <div style={{ display:"flex", flexDirection:"column", background:"var(--bg)", minHeight:"100%", paddingTop:"env(safe-area-inset-top, 44px)" }}>
+      <div style={{ display:"flex", justifyContent:"flex-end", padding:"12px 20px 0" }}>
+        <button onClick={() => setShowSettings(true)} style={{ background:"none", border:"none", padding:"4px", cursor:"pointer", color:"var(--text-muted)", WebkitTapHighlightColor:"transparent", display:"flex" }}><GearIcon /></button>
       </div>
 
-      <div style={{ padding: "12px 20px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-          <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#6B5344", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: "Georgia, serif", fontSize: "26px", color: "#fff", fontWeight: "normal" }}>{initials}</span>
+      <div style={{ padding:"12px 20px 0" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"16px", marginBottom:"16px" }}>
+          <div style={{ width:"72px", height:"72px", borderRadius:"50%", background:"#6B5344", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <span style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal" }}>{initials}</span>
           </div>
           <div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "var(--text)", lineHeight: 1.2 }}>{displayName}</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>{handle}</div>
-            <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.4 }}>{session?.user?.email}</div>
+            <div style={{ fontFamily:"Georgia, serif", fontSize:"20px", color:"var(--text)", lineHeight:1.2 }}>{displayName}</div>
+            <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"2px" }}>{handle}</div>
+            <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"4px", lineHeight:1.4 }}>{session?.user?.email}</div>
           </div>
         </div>
 
-        <div style={{ display: "flex", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "14px 0", marginBottom: "16px" }}>
-          {[{ value: String(publishedWorks.length), label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }].map(({ value, label }, i) => (
-            <div key={label} style={{ flex: 1, textAlign: "center", borderRight: i < 2 ? "1px solid var(--border)" : "none" }}>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+        <div style={{ display:"flex", borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", padding:"14px 0", marginBottom:"16px" }}>
+          {[{value:String(works.length),label:"Works"},{value:"0",label:"Followers"},{value:"0",label:"Following"}].map(({value,label},i) => (
+            <div key={label} style={{ flex:1, textAlign:"center", borderRight: i<2?"1px solid var(--border)":"none" }}>
+              <div style={{ fontFamily:"Georgia, serif", fontSize:"22px", color:"var(--text)" }}>{value}</div>
+              <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px", textTransform:"uppercase", letterSpacing:"0.05em" }}>{label}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "28px" }}>
-          <button onClick={onPublish} style={{ flex: 1, padding: "13px", background: "var(--accent)", border: "none", borderRadius: "12px", color: "#fff", fontSize: "15px", fontWeight: "500", cursor: "pointer", WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em" }}>
-            Publish
-          </button>
-          <button style={{ flex: 1, padding: "13px", background: "none", border: "1.5px solid var(--border-2)", borderRadius: "12px", color: "var(--text)", fontSize: "15px", fontWeight: "500", cursor: "pointer", WebkitTapHighlightColor: "transparent", letterSpacing: "0.01em" }}>
-            Edit Profile
-          </button>
+        <div style={{ display:"flex", gap:"10px", marginBottom:"28px" }}>
+          <button onClick={onPublish} style={{ flex:1, padding:"13px", background:"var(--accent)", border:"none", borderRadius:"12px", color:"#fff", fontSize:"15px", fontWeight:"500", cursor:"pointer", WebkitTapHighlightColor:"transparent", letterSpacing:"0.01em" }}>Publish</button>
+          <button style={{ flex:1, padding:"13px", background:"none", border:"1.5px solid var(--border-2)", borderRadius:"12px", color:"var(--text)", fontSize:"15px", fontWeight:"500", cursor:"pointer", WebkitTapHighlightColor:"transparent", letterSpacing:"0.01em" }}>Edit Profile</button>
         </div>
 
-        <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "16px" }}>Works</div>
+        <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", marginBottom:"16px" }}>Works</div>
 
-        {publishedWorks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6 }}>
+        {loading ? (
+          <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--text-muted)", fontSize:"14px" }}>Loading…</div>
+        ) : works.length === 0 ? (
+          <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--text-muted)", fontSize:"14px", lineHeight:1.6 }}>
             Nothing published yet. Tap Publish to share your first work.
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px", paddingBottom: "40px", maxWidth: "500px" }}>
-            {publishedWorks.map(book => (
-              <div key={book.id} onClick={() => onOpenBook && onOpenBook(book.id)} style={{ cursor: "pointer" }}>
-                <div style={{ width: "100%", aspectRatio: "200/280", borderRadius: "6px", overflow: "hidden", boxShadow: "2px 4px 12px rgba(0,0,0,0.18)", marginBottom: "8px" }}>
-                  <WorkCover book={book} />
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"16px", paddingBottom:"40px", maxWidth:"500px" }}>
+            {works.map(work => (
+              <div key={work.id} onClick={() => onOpenWork && onOpenWork(work)} style={{ cursor:"pointer" }}>
+                <div style={{ width:"100%", aspectRatio:"200/280", borderRadius:"6px", overflow:"hidden", boxShadow:"2px 4px 12px rgba(0,0,0,0.18)", marginBottom:"8px" }}>
+                  <WorkCover work={work} />
                 </div>
-                <div style={{ fontSize: "13px", color: "var(--text)", fontWeight: "500", lineHeight: 1.3 }}>{book.title}</div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
-                  {book.totalPages === 1 ? "1 page" : `${book.totalPages} pages`}
+                <div style={{ fontSize:"13px", color:"var(--text)", fontWeight:"500", lineHeight:1.3 }}>{work.title}</div>
+                <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px" }}>
+                  {new Date(work.created_at).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})}
                 </div>
               </div>
             ))}
