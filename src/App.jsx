@@ -6,6 +6,7 @@ import CommunityView from "./views/CommunityView";
 import ProfileView from "./views/ProfileView";
 import ReaderView from "./views/ReaderView";
 import PublishView from "./views/PublishView";
+import WorkReaderView from "./views/WorkReaderView";
 import BibleView from "./views/BibleView";
 import BibleReaderView from "./views/BibleReaderView";
 import AuthScreen from "./auth/AuthScreen";
@@ -26,11 +27,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("library");
   const [readerBookId, setReaderBookId] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
+  const [openWork, setOpenWork] = useState(null); // work object from Supabase
   const [theme, setThemeState] = useState(loadTheme);
 
   // Bible state
   const [showBible, setShowBible] = useState(false);
-  const [bibleChapter, setBibleChapter] = useState(null); // { book, chapterIndex, allBooks }
+  const [bibleChapter, setBibleChapter] = useState(null);
 
   function setTheme(t) {
     if (!THEMES.includes(t)) return;
@@ -41,56 +43,25 @@ export default function App() {
   function openBook(bookId) { setReaderBookId(bookId); }
   function closeReader() { setReaderBookId(null); }
 
- function handlePublished() {
-  setShowPublish(false);
-  setActiveTab("profile");
-}
-
-
-  function openBible() {
-    setBibleChapter(null);
-    setShowBible(true);
+  function handlePublished() {
+    setShowPublish(false);
+    setActiveTab("profile");
   }
 
-  function closeBible() {
-    setShowBible(false);
-    setBibleChapter(null);
-  }
+  function openBible() { setBibleChapter(null); setShowBible(true); }
+  function closeBible() { setShowBible(false); setBibleChapter(null); }
+  function openBibleChapter(chapterInfo) { setBibleChapter(chapterInfo); }
+  function navigateBibleChapter(chapterInfo) { setBibleChapter(chapterInfo); }
 
-  function openBibleChapter(chapterInfo) {
-    setBibleChapter(chapterInfo);
-  }
-
-  function navigateBibleChapter(chapterInfo) {
-    setBibleChapter(chapterInfo);
-  }
-
-  // Still loading session
   if (session === undefined) {
     return (
-      <div style={{
-        minHeight: "100dvh",
-        background: "#000",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <div style={{
-          fontFamily: "'Lora', Georgia, serif",
-          fontSize: 22,
-          color: "#f0ece4",
-          letterSpacing: "-0.01em",
-        }}>
-          BookWorm
-        </div>
+      <div style={{ minHeight: "100dvh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 22, color: "#f0ece4", letterSpacing: "-0.01em" }}>BookWorm</div>
       </div>
     );
   }
 
-  // Not logged in — show auth screen
-  if (!session) {
-    return <AuthScreen />;
-  }
+  if (!session) return <AuthScreen />;
 
   function renderTab() {
     switch (activeTab) {
@@ -98,8 +69,13 @@ export default function App() {
       case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;
-     case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} onOpenWork={() => {}} />;
-      default:          return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
+      case "profile":   return (
+        <ProfileView
+          onPublish={() => setShowPublish(true)}
+          onOpenWork={work => setOpenWork(work)}
+        />
+      );
+      default: return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
     }
   }
 
@@ -159,7 +135,19 @@ export default function App() {
         {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
         {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}
 
-        {/* Bible overlay */}
+        {openWork && (
+          <WorkReaderView
+            work={openWork}
+            onClose={() => setOpenWork(null)}
+            onDeleted={() => {
+              setOpenWork(null);
+              // Force profile to reload by toggling tab
+              setActiveTab("library");
+              setTimeout(() => setActiveTab("profile"), 50);
+            }}
+          />
+        )}
+
         {showBible && !bibleChapter && (
           <div className="bible-overlay">
             <div className="bible-overlay-topbar">
@@ -188,39 +176,10 @@ export default function App() {
       </div>
 
       <style>{`
-        .bible-overlay {
-          position: fixed;
-          inset: 0;
-          background: var(--bg);
-          z-index: 200;
-          display: flex;
-          flex-direction: column;
-        }
-        .bible-overlay-topbar {
-          display: flex;
-          align-items: center;
-          padding: 56px 16px 12px;
-          border-bottom: 1px solid rgba(139,111,71,0.12);
-        }
-        .bible-overlay-close {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          background: none;
-          border: none;
-          color: var(--accent);
-          font-size: 15px;
-          font-family: 'DM Sans', sans-serif;
-          cursor: pointer;
-          padding: 4px 0;
-          -webkit-tap-highlight-color: transparent;
-        }
-        .bible-overlay-content {
-          flex: 1;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-          padding: 0 16px 40px;
-        }
+        .bible-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: flex; flex-direction: column; }
+        .bible-overlay-topbar { display: flex; align-items: center; padding: 56px 16px 12px; border-bottom: 1px solid rgba(139,111,71,0.12); }
+        .bible-overlay-close { display: flex; align-items: center; gap: 4px; background: none; border: none; color: var(--accent); font-size: 15px; font-family: 'DM Sans', sans-serif; cursor: pointer; padding: 4px 0; -webkit-tap-highlight-color: transparent; }
+        .bible-overlay-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px 40px; }
       `}</style>
     </ThemeContext.Provider>
   );
