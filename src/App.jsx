@@ -41,11 +41,11 @@ export default function App() {
   function openBook(bookId) { setReaderBookId(bookId); }
   function closeReader() { setReaderBookId(null); }
 
-  function handlePublished(bookId) {
-    setShowPublish(false);
-    setActiveTab("shelf");
-    setReaderBookId(bookId);
-  }
+ function handlePublished() {
+  setShowPublish(false);
+  setActiveTab("profile");
+}
+
 
   function openBible() {
     setBibleChapter(null);
