@@ -98,7 +98,7 @@ export default function App() {
       case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
       case "discover":  return <DiscoverView />;
       case "community": return <CommunityView />;
-      case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} />;
+      case "profile":   return <ProfileView onPublish={() => setShowPublish(true)} onOpenBook={openBook} />;
       default:          return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
     }
   }

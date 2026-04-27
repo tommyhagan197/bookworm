@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSetting, setSetting } from "../db/idb";
+import { getSetting, setSetting, dbGetAll } from "../db/idb";
 import { useTheme } from "../App";
 import { useAuth } from "../auth/AuthContext";
 
@@ -28,6 +28,50 @@ const BackIcon = () => (
     <path d="M15 18l-6-6 6-6"/>
   </svg>
 );
+
+// Reconstruct cover SVG from stored coverData
+const PALETTE = [
+  { id: "walnut",   color: "#6B5344", dark: "#3D2B1F" },
+  { id: "ink",      color: "#2E3F5C", dark: "#1A2537" },
+  { id: "moss",     color: "#3A6B4A", dark: "#1E3D2A" },
+  { id: "foxglove", color: "#8B3A62", dark: "#4D1F37" },
+  { id: "mustard",  color: "#8B7A35", dark: "#4D4219" },
+  { id: "teal",     color: "#2E7B7A", dark: "#1A4544" },
+  { id: "espresso", color: "#3D2B1F", dark: "#1E1208" },
+  { id: "ember",    color: "#E07C3A", dark: "#A04E1A" },
+  { id: "forest",   color: "#1E3D2A", dark: "#0D1F14" },
+  { id: "dusk",     color: "#4D3A6B", dark: "#2A1F3D" },
+  { id: "sand",     color: "#C4936A", dark: "#8B5E3A" },
+  { id: "cream",    color: "#D4C09A", dark: "#A08B5A" },
+];
+
+function getPaletteColor(id) {
+  return PALETTE.find(p => p.id === id) || PALETTE[0];
+}
+
+function WorkCover({ book }) {
+  const color = book.color || "#6B5344";
+  const title = book.title || "Untitled";
+  const words = title.split(" ");
+  const line1 = words.slice(0, Math.ceil(words.length / 2)).join(" ");
+  const line2 = words.slice(Math.ceil(words.length / 2)).join(" ");
+
+  return (
+    <svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <defs>
+        <linearGradient id={`wg_${book.id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={color}/>
+          <stop offset="100%" stopColor={color + "aa"}/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="200" height="280" fill={`url(#wg_${book.id})`}/>
+      <rect x="0" y="0" width="200" height="4" fill="rgba(255,255,255,0.25)"/>
+      <text x="16" y="160" fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{line1}</text>
+      {line2 && <text x="16" y="184" fontFamily="Georgia,serif" fontSize="22" fill="white" fontWeight="bold">{line2}</text>}
+      <text x="16" y="210" fontFamily="Georgia,serif" fontSize="11" fill="rgba(255,255,255,0.7)">{book.author}</text>
+    </svg>
+  );
+}
 
 function ThemeTile({ id, label, active, onClick }) {
   const configs = {
@@ -64,18 +108,27 @@ function ThemeTile({ id, label, active, onClick }) {
   );
 }
 
-export default function ProfileView({ onPublish }) {
+export default function ProfileView({ onPublish, onOpenBook }) {
   const { theme, setTheme } = useTheme();
   const { profile, signOut, session } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSizeState] = useState("medium");
+  const [publishedWorks, setPublishedWorks] = useState([]);
 
   useEffect(() => {
     getSetting("fontSize", "medium").then(f => {
       setFontSizeState(f);
       applyFontSize(f);
     });
+    loadPublishedWorks();
   }, []);
+
+  async function loadPublishedWorks() {
+    const allBooks = await dbGetAll("books");
+    const works = allBooks.filter(b => b.type === "published");
+    works.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+    setPublishedWorks(works);
+  }
 
   function applyFontSize(f) {
     const fs = FONT_SIZES.find(s => s.id === f) || FONT_SIZES[1];
@@ -93,7 +146,6 @@ export default function ProfileView({ onPublish }) {
     await setSetting("fontSize", f);
   }
 
-  // display_name is the correct column — fall back to email prefix
   const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "Reader";
   const handle = "@" + displayName.toLowerCase().replace(/\s+/g, "");
   const initials = displayName.charAt(0).toUpperCase();
@@ -219,6 +271,7 @@ export default function ProfileView({ onPublish }) {
       </div>
 
       <div style={{ padding: "12px 20px 0" }}>
+        {/* Avatar + name */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
           <div style={{
             width: "72px", height: "72px", borderRadius: "50%",
@@ -235,24 +288,29 @@ export default function ProfileView({ onPublish }) {
           </div>
         </div>
 
+        {/* Stats */}
         <div style={{
           display: "flex",
           borderTop: "1px solid var(--border)",
           borderBottom: "1px solid var(--border)",
           padding: "14px 0", marginBottom: "16px",
         }}>
-          {[{ value: "0", label: "Works" }, { value: "0", label: "Followers" }, { value: "0", label: "Following" }]
-            .map(({ value, label }, i) => (
-              <div key={label} style={{
-                flex: 1, textAlign: "center",
-                borderRight: i < 2 ? "1px solid var(--border)" : "none",
-              }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
-              </div>
-            ))}
+          {[
+            { value: String(publishedWorks.length), label: "Works" },
+            { value: "0", label: "Followers" },
+            { value: "0", label: "Following" },
+          ].map(({ value, label }, i) => (
+            <div key={label} style={{
+              flex: 1, textAlign: "center",
+              borderRight: i < 2 ? "1px solid var(--border)" : "none",
+            }}>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: "22px", color: "var(--text)" }}>{value}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+            </div>
+          ))}
         </div>
 
+        {/* Actions */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "28px" }}>
           <button
             onClick={onPublish}
@@ -277,13 +335,47 @@ export default function ProfileView({ onPublish }) {
           </button>
         </div>
 
+        {/* Works */}
         <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-ghost)", marginBottom: "16px" }}>Works</div>
-        <div style={{
-          textAlign: "center", padding: "48px 20px",
-          color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6,
-        }}>
-          Nothing published yet. Tap Publish to share your first work.
-        </div>
+
+        {publishedWorks.length === 0 ? (
+          <div style={{
+            textAlign: "center", padding: "48px 20px",
+            color: "var(--text-muted)", fontSize: "14px", lineHeight: 1.6,
+          }}>
+            Nothing published yet. Tap Publish to share your first work.
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "16px",
+            paddingBottom: "40px",
+          }}>
+            {publishedWorks.map(book => (
+              <div
+                key={book.id}
+                onClick={() => onOpenBook && onOpenBook(book.id)}
+                style={{ cursor: "pointer" }}
+              >
+                <div style={{
+                  width: "100%",
+                  aspectRatio: "200/280",
+                  borderRadius: "6px",
+                  overflow: "hidden",
+                  boxShadow: "2px 4px 12px rgba(0,0,0,0.18)",
+                  marginBottom: "8px",
+                }}>
+                  <WorkCover book={book} />
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--text)", fontWeight: "500", lineHeight: 1.3 }}>{book.title}</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                  {book.totalPages === 1 ? "1 page" : `${book.totalPages} pages`}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
