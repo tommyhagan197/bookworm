@@ -88,7 +88,7 @@ export default function UserProfileView({ userId, currentUserId, onClose }) {
         { data: worksData },
         { data: followRow },
       ] = await Promise.all([
-        supabase.from("profiles").select("id, display_name, bio").eq("id", userId).single(),
+        supabase.from("profiles").select("id, display_name, bio, avatar_url").eq("id", userId).single(),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
         supabase.from("works").select("*").eq("author_id", userId).order("created_at", { ascending: false }),
@@ -165,10 +165,12 @@ export default function UserProfileView({ userId, currentUserId, onClose }) {
             <div style={{
               width: 72, height: 72, borderRadius: "50%", background: avatarColor,
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              overflow: "hidden",
             }}>
-              <span style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "#fff", fontWeight: "normal" }}>
-                {initials(displayName)}
-              </span>
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontFamily: "Georgia, serif", fontSize: 26, color: "#fff", fontWeight: "normal" }}>{initials(displayName)}</span>
+              }
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "Georgia, serif", fontSize: 20, color: "var(--text)", lineHeight: 1.2 }}>{displayName}</div>
