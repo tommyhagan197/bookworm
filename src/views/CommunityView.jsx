@@ -18,15 +18,19 @@ function initials(profile) {
 }
 
 function Avatar({ profile, size = 36 }) {
-  const color = colorFromUsername(profile?.username || "");
+  const color = colorFromUsername(profile?.display_name || profile?.username || "");
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%", background: color,
       display: "flex", alignItems: "center", justifyContent: "center",
       flexShrink: 0, color: "#F5F0E8", fontSize: size * 0.38,
       fontFamily: "'Lora', Georgia, serif", fontWeight: 600, letterSpacing: "0.02em",
+      overflow: "hidden",
     }}>
-      {initials(profile)}
+      {profile?.avatar_url
+        ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : initials(profile)
+      }
     </div>
   );
 }
@@ -151,7 +155,7 @@ function ReadersYouMayKnow({ currentUserId, followingIds, followingProfiles, onF
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, avatar_url")
         .in("id", topIds);
 
       if (!profiles || profiles.length === 0) { setLoaded(true); return; }
@@ -255,7 +259,7 @@ function ReadingTheSameBooks({ currentUserId, followingIds, onFollow, onUnfollow
 
       const { data: others } = await supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, avatar_url")
         .eq("currently_reading_title", me.currently_reading_title)
         .neq("id", currentUserId)
         .limit(20);
@@ -441,7 +445,7 @@ function FriendsTab({ onViewProfile }) {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, avatar_url")
         .neq("id", user.id);
       setAllProfiles(profiles || []);
       setLoadingProfiles(false);
@@ -455,7 +459,7 @@ function FriendsTab({ onViewProfile }) {
         setFollowingIds(new Set(ids));
         const { data: followedProfiles } = await supabase
           .from("profiles")
-          .select("id, display_name")
+          .select("id, display_name, avatar_url")
           .in("id", ids);
         setFollowingProfiles(followedProfiles || []);
       }
