@@ -435,8 +435,7 @@ function FriendsTab() {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, username, display_name")
-        .neq("id", user.id)
-        .order("display_name", { ascending: true });
+        .neq("id", user.id);
       setAllProfiles(profiles || []);
       setLoadingProfiles(false);
 
