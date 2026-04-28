@@ -455,7 +455,7 @@ function FriendsTab() {
       const { data } = await supabase
         .from("profiles")
         .select("id, username, display_name")
-        .ilike("username", `%${searchQuery.trim()}%`)
+        .or(`username.ilike.%${searchQuery.trim()}%,display_name.ilike.%${searchQuery.trim()}%`)
         .neq("id", currentUser?.id || "")
         .limit(10);
       setSearchResults(data || []);
