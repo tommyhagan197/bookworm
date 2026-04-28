@@ -420,17 +420,26 @@ function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, load
 function FriendsTab() {
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [allProfiles, setAllProfiles] = useState([]);
   const [followingIds, setFollowingIds] = useState(new Set());
   const [followingProfiles, setFollowingProfiles] = useState([]);
   const [loadingFollow, setLoadingFollow] = useState({});
-  const [searching, setSearching] = useState(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setCurrentUser(user);
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, display_name")
+        .neq("id", user.id)
+        .order("display_name", { ascending: true });
+      setAllProfiles(profiles || []);
+      setLoadingProfiles(false);
+
       const { data: follows } = await supabase
         .from("follows")
         .select("following_id")
@@ -438,31 +447,25 @@ function FriendsTab() {
       if (follows?.length > 0) {
         const ids = follows.map(f => f.following_id);
         setFollowingIds(new Set(ids));
-        const { data: profiles } = await supabase
+        const { data: followedProfiles } = await supabase
           .from("profiles")
           .select("id, username, display_name")
           .in("id", ids);
-        setFollowingProfiles(profiles || []);
+        setFollowingProfiles(followedProfiles || []);
       }
     }
     load();
   }, []);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); setSearching(false); return; }
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, display_name")
-        .or(`username.ilike.%${searchQuery.trim()}%,display_name.ilike.%${searchQuery.trim()}%`)
-        .neq("id", currentUser?.id || "")
-        .limit(10);
-      setSearchResults(data || []);
-      setSearching(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, currentUser]);
+  const filteredProfiles = searchQuery.trim()
+    ? allProfiles.filter(p => {
+        const q = searchQuery.toLowerCase();
+        return (
+          p.display_name?.toLowerCase().includes(q) ||
+          p.username?.toLowerCase().includes(q)
+        );
+      })
+    : allProfiles;
 
   async function handleFollow(profileId) {
     if (!currentUser) return;
@@ -472,9 +475,7 @@ function FriendsTab() {
       .insert({ follower_id: currentUser.id, following_id: profileId });
     if (!error) {
       setFollowingIds(p => new Set([...p, profileId]));
-      const profile =
-        searchResults.find(p => p.id === profileId) ||
-        followingProfiles.find(p => p.id === profileId);
+      const profile = allProfiles.find(p => p.id === profileId);
       if (profile) setFollowingProfiles(p => [...p, profile]);
     }
     setLoadingFollow(p => ({ ...p, [profileId]: false }));
@@ -525,26 +526,30 @@ function FriendsTab() {
         )}
       </div>
 
-      {/* Search results */}
-      {showSearch && (
-        searching ? (
-          <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>Searching…</div>
-        ) : searchResults.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>No readers found for "{searchQuery}"</div>
-        ) : searchResults.map(profile => (
-          <UserRow
-            key={profile.id}
-            profile={profile}
-            isFollowing={followingIds.has(profile.id)}
-            onFollow={handleFollow}
-            onUnfollow={handleUnfollow}
-            loading={!!loadingFollow[profile.id]}
-          />
-        ))
+      {/* All readers / search results */}
+      {loadingProfiles ? (
+        <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>Loading readers…</div>
+      ) : filteredProfiles.length === 0 && searchQuery ? (
+        <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>No readers found for "{searchQuery}"</div>
+      ) : filteredProfiles.length === 0 ? null : (
+        <>
+          {searchQuery && <SectionHeading>Results</SectionHeading>}
+          {!searchQuery && allProfiles.length > 0 && <SectionHeading>All readers</SectionHeading>}
+          {filteredProfiles.map(profile => (
+            <UserRow
+              key={profile.id}
+              profile={profile}
+              isFollowing={followingIds.has(profile.id)}
+              onFollow={handleFollow}
+              onUnfollow={handleUnfollow}
+              loading={!!loadingFollow[profile.id]}
+            />
+          ))}
+        </>
       )}
 
       {/* Discovery — only when not searching */}
-      {!showSearch && (
+      {!showSearch && allProfiles.length > 0 && (
         <>
           <ReadersYouMayKnow
             currentUserId={currentUser?.id}
