@@ -282,10 +282,15 @@ export default function ProfileView({ onPublish, onOpenWork }) {
   const [fontSize, setFontSizeState] = useState("medium");
   const [works, setWorks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     getSetting("fontSize", "medium").then(f => { setFontSizeState(f); applyFontSize(f); });
-    if (session?.user?.id) loadWorks();
+    if (session?.user?.id) {
+      loadWorks();
+      loadFollowCounts(session.user.id);
+    }
   }, [session?.user?.id]);
 
   async function loadWorks() {
@@ -296,6 +301,15 @@ export default function ProfileView({ onPublish, onOpenWork }) {
       .order("created_at", { ascending: false });
     if (!error && data) setWorks(data);
     setLoading(false);
+  }
+
+  async function loadFollowCounts(userId) {
+    const [{ count: followers }, { count: following }] = await Promise.all([
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
+    ]);
+    setFollowerCount(followers ?? 0);
+    setFollowingCount(following ?? 0);
   }
 
   function applyFontSize(f) {
@@ -380,7 +394,7 @@ export default function ProfileView({ onPublish, onOpenWork }) {
         </div>
 
         <div style={{ display:"flex", borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", padding:"14px 0", marginBottom:"16px" }}>
-          {[{value:String(works.length),label:"Works"},{value:"0",label:"Followers"},{value:"0",label:"Following"}].map(({value,label},i) => (
+          {[{value:String(works.length),label:"Works"},{value:String(followerCount),label:"Followers"},{value:String(followingCount),label:"Following"}].map(({value,label},i) => (
             <div key={label} style={{ flex:1, textAlign:"center", borderRight: i<2?"1px solid var(--border)":"none" }}>
               <div style={{ fontFamily:"Georgia, serif", fontSize:"22px", color:"var(--text)" }}>{value}</div>
               <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px", textTransform:"uppercase", letterSpacing:"0.05em" }}>{label}</div>
