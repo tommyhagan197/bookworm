@@ -403,6 +403,7 @@ export default function ProfileView({ onPublish, onOpenWork }) {
   const [loading, setLoading] = useState(true);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [followList, setFollowList] = useState(null);
 
   useEffect(() => {
     getSetting("fontSize", "medium").then(f => { setFontSizeState(f); applyFontSize(f); });
@@ -429,6 +430,22 @@ export default function ProfileView({ onPublish, onOpenWork }) {
     ]);
     setFollowerCount(followers ?? 0);
     setFollowingCount(following ?? 0);
+  }
+
+  async function openFollowList(type) {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    let ids = [];
+    if (type === "followers") {
+      const { data } = await supabase.from("follows").select("follower_id").eq("following_id", userId);
+      ids = (data || []).map(r => r.follower_id);
+    } else {
+      const { data } = await supabase.from("follows").select("following_id").eq("follower_id", userId);
+      ids = (data || []).map(r => r.following_id);
+    }
+    if (ids.length === 0) { setFollowList({ type, users: [] }); return; }
+    const { data: users } = await supabase.from("profiles").select("id, display_name, avatar_url").in("id", ids);
+    setFollowList({ type, users: users || [] });
   }
 
   function applyFontSize(f) {
@@ -519,8 +536,8 @@ export default function ProfileView({ onPublish, onOpenWork }) {
         </div>
 
         <div style={{ display:"flex", borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", padding:"14px 0", marginBottom:"16px" }}>
-          {[{value:String(works.length),label:"Works"},{value:String(followerCount),label:"Followers"},{value:String(followingCount),label:"Following"}].map(({value,label},i) => (
-            <div key={label} style={{ flex:1, textAlign:"center", borderRight: i<2?"1px solid var(--border)":"none" }}>
+          {[{value:String(works.length),label:"Works",onClick:null},{value:String(followerCount),label:"Followers",onClick:()=>openFollowList("followers")},{value:String(followingCount),label:"Following",onClick:()=>openFollowList("following")}].map(({value,label,onClick},i) => (
+            <div key={label} onClick={onClick} style={{ flex:1, textAlign:"center", borderRight: i<2?"1px solid var(--border)":"none", cursor:onClick?"pointer":"default" }}>
               <div style={{ fontFamily:"Georgia, serif", fontSize:"22px", color:"var(--text)" }}>{value}</div>
               <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px", textTransform:"uppercase", letterSpacing:"0.05em" }}>{label}</div>
             </div>
@@ -554,6 +571,40 @@ export default function ProfileView({ onPublish, onOpenWork }) {
           </div>
         )}
       </div>
+
+      {followList && (
+        <>
+          <div onClick={() => setFollowList(null)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300 }} />
+          <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:301, background:"var(--bg)", borderRadius:"20px 20px 0 0", maxHeight:"70vh", display:"flex", flexDirection:"column", paddingBottom:"env(safe-area-inset-bottom, 24px)", boxShadow:"0 -4px 32px rgba(0,0,0,0.2)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px 12px", borderBottom:"1px solid var(--border)", flexShrink:0, position:"relative" }}>
+              <div style={{ width:36, height:4, borderRadius:2, background:"var(--border)", position:"absolute", left:"50%", top:10, transform:"translateX(-50%)" }} />
+              <div style={{ fontFamily:"Georgia, serif", fontSize:17, color:"var(--text)", textTransform:"capitalize" }}>{followList.type}</div>
+              <button onClick={() => setFollowList(null)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:22, cursor:"pointer", padding:0, lineHeight:1, WebkitTapHighlightColor:"transparent" }}>×</button>
+            </div>
+            <div style={{ overflowY:"auto", WebkitOverflowScrolling:"touch", padding:"0 20px" }}>
+              {followList.users.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"40px 0", color:"var(--text-muted)", fontFamily:"'DM Sans', sans-serif", fontSize:14 }}>No {followList.type} yet.</div>
+              ) : followList.users.map(u => {
+                const name = u.display_name || "Reader";
+                const colors = ["#6B5344","#4A6741","#2C4A6B","#7A5C2E","#4A6B5C","#6B4A5C"];
+                let hash = 0; for (let i=0;i<name.length;i++) hash = name.charCodeAt(i)+((hash<<5)-hash);
+                const bg = colors[Math.abs(hash)%colors.length];
+                return (
+                  <div key={u.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+                    <div style={{ width:40, height:40, borderRadius:"50%", background:bg, flexShrink:0, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      {u.avatar_url
+                        ? <img src={u.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                        : <span style={{ fontFamily:"Georgia, serif", fontSize:15, color:"#fff" }}>{name.slice(0,2).toUpperCase()}</span>
+                      }
+                    </div>
+                    <div style={{ fontFamily:"'DM Sans', sans-serif", fontSize:15, fontWeight:600, color:"var(--text)" }}>{name}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {showEditProfile && (
         <EditProfileSheet
