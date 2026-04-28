@@ -61,12 +61,16 @@ function FollowButton({ profileId, isFollowing, loading, onFollow, onUnfollow, s
 
 // ─── User row ─────────────────────────────────────────────────────────────────
 
-function UserRow({ profile, isFollowing, onFollow, onUnfollow, loading }) {
+function UserRow({ profile, isFollowing, onFollow, onUnfollow, loading, onViewProfile }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 12, padding: "12px 0",
-      borderBottom: "1px solid rgba(139,111,71,0.1)",
-    }}>
+    <div
+      onClick={() => onViewProfile?.(profile.id)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12, padding: "12px 0",
+        borderBottom: "1px solid rgba(139,111,71,0.1)",
+        cursor: onViewProfile ? "pointer" : "default",
+      }}
+    >
       <Avatar profile={profile} size={40} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: "var(--text)", marginBottom: 1 }}>
@@ -78,13 +82,15 @@ function UserRow({ profile, isFollowing, onFollow, onUnfollow, loading }) {
           </div>
         )}
       </div>
-      <FollowButton
-        profileId={profile.id}
-        isFollowing={isFollowing}
-        loading={loading}
-        onFollow={onFollow}
-        onUnfollow={onUnfollow}
-      />
+      <div onClick={e => e.stopPropagation()}>
+        <FollowButton
+          profileId={profile.id}
+          isFollowing={isFollowing}
+          loading={loading}
+          onFollow={onFollow}
+          onUnfollow={onUnfollow}
+        />
+      </div>
     </div>
   );
 }
@@ -315,7 +321,7 @@ function ReadingTheSameBooks({ currentUserId, followingIds, onFollow, onUnfollow
 // Selecting one shows real readers with that genre, excluding already-followed.
 // Entire section hidden if no genres exist in the database yet.
 
-function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, loadingFollow }) {
+function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, loadingFollow, onViewProfile }) {
   const [availableGenres, setAvailableGenres] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState(null);
   const [readers, setReaders] = useState([]);
@@ -407,6 +413,7 @@ function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, load
               onFollow={onFollow}
               onUnfollow={onUnfollow}
               loading={!!loadingFollow[profile.id]}
+              onViewProfile={onViewProfile}
             />
           ))
         )
@@ -417,7 +424,7 @@ function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, load
 
 // ─── Friends Tab ──────────────────────────────────────────────────────────────
 
-function FriendsTab() {
+function FriendsTab({ onViewProfile }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [allProfiles, setAllProfiles] = useState([]);
@@ -542,6 +549,7 @@ function FriendsTab() {
               onFollow={handleFollow}
               onUnfollow={handleUnfollow}
               loading={!!loadingFollow[profile.id]}
+              onViewProfile={onViewProfile}
             />
           ))}
         </>
@@ -573,6 +581,7 @@ function FriendsTab() {
             onFollow={handleFollow}
             onUnfollow={handleUnfollow}
             loadingFollow={loadingFollow}
+            onViewProfile={onViewProfile}
           />
 
           {/* Following list */}
@@ -587,6 +596,7 @@ function FriendsTab() {
                   onFollow={handleFollow}
                   onUnfollow={handleUnfollow}
                   loading={!!loadingFollow[profile.id]}
+                  onViewProfile={onViewProfile}
                 />
               ))}
             </>
@@ -664,7 +674,7 @@ function BookClubsTab() {
 
 // ─── Community View (shell unchanged) ────────────────────────────────────────
 
-export default function CommunityView() {
+export default function CommunityView({ onViewProfile }) {
   const [tab, setTab] = useState("clubs");
 
   return (
@@ -691,7 +701,7 @@ export default function CommunityView() {
         </div>
       </div>
       <div style={{ flex: 1, padding: "0 16px 32px" }}>
-        {tab === "clubs" ? <BookClubsTab /> : <FriendsTab />}
+        {tab === "clubs" ? <BookClubsTab /> : <FriendsTab onViewProfile={onViewProfile} />}
       </div>
     </div>
   );

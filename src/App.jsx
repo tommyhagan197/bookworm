@@ -9,6 +9,7 @@ import PublishView from "./views/PublishView";
 import WorkReaderView from "./views/WorkReaderView";
 import BibleView from "./views/BibleView";
 import BibleReaderView from "./views/BibleReaderView";
+import UserProfileView from "./views/UserProfileView";
 import AuthScreen from "./auth/AuthScreen";
 import { useAuth } from "./auth/AuthContext";
 import "./App.css";
@@ -28,6 +29,7 @@ export default function App() {
   const [readerBookId, setReaderBookId] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
   const [openWork, setOpenWork] = useState(null); // work object from Supabase
+  const [viewingUserId, setViewingUserId] = useState(null);
   const [theme, setThemeState] = useState(loadTheme);
 
   // Bible state
@@ -68,7 +70,7 @@ export default function App() {
       case "shelf":     return <ShelfView onOpenBook={openBook} onOpenBible={openBible} />;
       case "library":   return <BrowseView onOpenBook={openBook} onOpenBible={openBible} />;
       case "discover":  return <DiscoverView />;
-      case "community": return <CommunityView />;
+      case "community": return <CommunityView onViewProfile={setViewingUserId} />;
       case "profile":   return (
         <ProfileView
           onPublish={() => setShowPublish(true)}
@@ -131,6 +133,14 @@ export default function App() {
             <span>Profile</span>
           </button>
         </nav>
+
+        {viewingUserId && (
+          <UserProfileView
+            userId={viewingUserId}
+            currentUserId={session?.user?.id}
+            onClose={() => setViewingUserId(null)}
+          />
+        )}
 
         {readerBookId && <ReaderView bookId={readerBookId} onClose={closeReader} />}
         {showPublish && <PublishView onClose={() => setShowPublish(false)} onPublished={handlePublished} />}

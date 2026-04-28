@@ -275,17 +275,141 @@ function ThemeTile({ id, label, active, onClick }) {
   );
 }
 
+function EditProfileSheet({ profile, userId, onClose, onSaved }) {
+  const [displayName, setDisplayName] = useState(profile?.display_name || "");
+  const [bio, setBio] = useState(profile?.bio || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleAvatarPick(e) {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${userId}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (!error) {
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      setAvatarUrl(data.publicUrl + "?t=" + Date.now());
+    }
+    setUploading(false);
+  }
+
+  async function handleSave() {
+    if (!userId || saving) return;
+    setSaving(true);
+    await supabase.from("profiles").update({
+      display_name: displayName.trim() || profile?.display_name,
+      bio: bio.trim(),
+      avatar_url: avatarUrl,
+    }).eq("id", userId);
+    setSaving(false);
+    onSaved();
+  }
+
+  const initials = (displayName || "R").charAt(0).toUpperCase();
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300 }}
+      />
+      {/* Sheet */}
+      <div style={{
+        position:"fixed", bottom:0, left:0, right:0, zIndex:301,
+        background:"var(--bg)", borderRadius:"20px 20px 0 0",
+        paddingBottom:"env(safe-area-inset-bottom, 24px)",
+        boxShadow:"0 -4px 32px rgba(0,0,0,0.2)",
+      }}>
+        {/* Handle + header */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px 12px" }}>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:15, fontFamily:"'DM Sans', sans-serif", cursor:"pointer", padding:0, WebkitTapHighlightColor:"transparent" }}>Cancel</button>
+          <div style={{ width:36, height:4, borderRadius:2, background:"var(--border)", position:"absolute", left:"50%", top:10, transform:"translateX(-50%)" }} />
+          <div style={{ fontFamily:"Georgia, serif", fontSize:17, color:"var(--text)" }}>Edit Profile</div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{ background:"none", border:"none", color:"var(--accent)", fontSize:15, fontWeight:600, fontFamily:"'DM Sans', sans-serif", cursor:saving?"default":"pointer", opacity:saving?0.5:1, padding:0, WebkitTapHighlightColor:"transparent" }}
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+
+        <div style={{ padding:"8px 20px 24px", display:"flex", flexDirection:"column", gap:20 }}>
+          {/* Avatar picker */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
+            <div
+              onClick={() => document.getElementById("avatar-file-input").click()}
+              style={{ width:80, height:80, borderRadius:"50%", background:"#6B5344", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", cursor:"pointer", position:"relative", flexShrink:0 }}
+            >
+              {avatarUrl
+                ? <img src={avatarUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                : <span style={{ fontFamily:"Georgia, serif", fontSize:28, color:"#fff" }}>{initials}</span>
+              }
+              <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.35)", display:"flex", alignItems:"center", justifyContent:"center", borderRadius:"50%" }}>
+                {uploading
+                  ? <div style={{ width:20, height:20, border:"2px solid rgba(255,255,255,0.4)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite" }} />
+                  : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                }
+              </div>
+            </div>
+            <div style={{ fontSize:13, color:"var(--accent)", fontFamily:"'DM Sans', sans-serif", fontWeight:500 }}>Change photo</div>
+            <input id="avatar-file-input" type="file" accept="image/*" style={{ display:"none" }} onChange={handleAvatarPick} />
+          </div>
+
+          {/* Display name */}
+          <div>
+            <div style={{ fontSize:11, textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", marginBottom:8, fontFamily:"'DM Sans', sans-serif" }}>Name</div>
+            <input
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              maxLength={50}
+              style={{ width:"100%", boxSizing:"border-box", padding:"12px 14px", borderRadius:10, border:"1px solid var(--border)", background:"var(--surface)", color:"var(--text)", fontSize:15, fontFamily:"'DM Sans', sans-serif", outline:"none", WebkitAppearance:"none" }}
+            />
+          </div>
+
+          {/* Bio */}
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+              <div style={{ fontSize:11, textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", fontFamily:"'DM Sans', sans-serif" }}>Bio</div>
+              <div style={{ fontSize:11, color:"var(--text-ghost)", fontFamily:"'DM Sans', sans-serif" }}>{bio.length}/160</div>
+            </div>
+            <textarea
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              maxLength={160}
+              rows={3}
+              placeholder="A few words about you…"
+              style={{ width:"100%", boxSizing:"border-box", padding:"12px 14px", borderRadius:10, border:"1px solid var(--border)", background:"var(--surface)", color:"var(--text)", fontSize:15, fontFamily:"'DM Sans', sans-serif", outline:"none", resize:"none", WebkitAppearance:"none", lineHeight:1.5 }}
+            />
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
+  );
+}
+
 export default function ProfileView({ onPublish, onOpenWork }) {
   const { theme, setTheme } = useTheme();
-  const { profile, signOut, session } = useAuth();
+  const { profile, signOut, session, fetchProfile } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [fontSize, setFontSizeState] = useState("medium");
   const [works, setWorks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     getSetting("fontSize", "medium").then(f => { setFontSizeState(f); applyFontSize(f); });
-    if (session?.user?.id) loadWorks();
+    if (session?.user?.id) {
+      loadWorks();
+      loadFollowCounts(session.user.id);
+    }
   }, [session?.user?.id]);
 
   async function loadWorks() {
@@ -296,6 +420,15 @@ export default function ProfileView({ onPublish, onOpenWork }) {
       .order("created_at", { ascending: false });
     if (!error && data) setWorks(data);
     setLoading(false);
+  }
+
+  async function loadFollowCounts(userId) {
+    const [{ count: followers }, { count: following }] = await Promise.all([
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
+      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
+    ]);
+    setFollowerCount(followers ?? 0);
+    setFollowingCount(following ?? 0);
   }
 
   function applyFontSize(f) {
@@ -369,18 +502,24 @@ export default function ProfileView({ onPublish, onOpenWork }) {
 
       <div style={{ padding:"12px 20px 0" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"16px", marginBottom:"16px" }}>
-          <div style={{ width:"72px", height:"72px", borderRadius:"50%", background:"#6B5344", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-            <span style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal" }}>{initials}</span>
+          <div style={{ width:"72px", height:"72px", borderRadius:"50%", background:"#6B5344", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }}>
+            {profile?.avatar_url
+              ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              : <span style={{ fontFamily:"Georgia, serif", fontSize:"26px", color:"#fff", fontWeight:"normal" }}>{initials}</span>
+            }
           </div>
           <div>
             <div style={{ fontFamily:"Georgia, serif", fontSize:"20px", color:"var(--text)", lineHeight:1.2 }}>{displayName}</div>
             <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"2px" }}>{handle}</div>
-            <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"4px", lineHeight:1.4 }}>{session?.user?.email}</div>
+            {profile?.bio
+              ? <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"4px", lineHeight:1.4 }}>{profile.bio}</div>
+              : <div style={{ fontSize:"13px", color:"var(--text-muted)", marginTop:"4px", lineHeight:1.4 }}>{session?.user?.email}</div>
+            }
           </div>
         </div>
 
         <div style={{ display:"flex", borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", padding:"14px 0", marginBottom:"16px" }}>
-          {[{value:String(works.length),label:"Works"},{value:"0",label:"Followers"},{value:"0",label:"Following"}].map(({value,label},i) => (
+          {[{value:String(works.length),label:"Works"},{value:String(followerCount),label:"Followers"},{value:String(followingCount),label:"Following"}].map(({value,label},i) => (
             <div key={label} style={{ flex:1, textAlign:"center", borderRight: i<2?"1px solid var(--border)":"none" }}>
               <div style={{ fontFamily:"Georgia, serif", fontSize:"22px", color:"var(--text)" }}>{value}</div>
               <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"2px", textTransform:"uppercase", letterSpacing:"0.05em" }}>{label}</div>
@@ -390,7 +529,7 @@ export default function ProfileView({ onPublish, onOpenWork }) {
 
         <div style={{ display:"flex", gap:"10px", marginBottom:"28px" }}>
           <button onClick={onPublish} style={{ flex:1, padding:"13px", background:"var(--accent)", border:"none", borderRadius:"12px", color:"#fff", fontSize:"15px", fontWeight:"500", cursor:"pointer", WebkitTapHighlightColor:"transparent", letterSpacing:"0.01em" }}>Publish</button>
-          <button style={{ flex:1, padding:"13px", background:"none", border:"1.5px solid var(--border-2)", borderRadius:"12px", color:"var(--text)", fontSize:"15px", fontWeight:"500", cursor:"pointer", WebkitTapHighlightColor:"transparent", letterSpacing:"0.01em" }}>Edit Profile</button>
+          <button onClick={() => setShowEditProfile(true)} style={{ flex:1, padding:"13px", background:"none", border:"1.5px solid var(--border-2)", borderRadius:"12px", color:"var(--text)", fontSize:"15px", fontWeight:"500", cursor:"pointer", WebkitTapHighlightColor:"transparent", letterSpacing:"0.01em" }}>Edit Profile</button>
         </div>
 
         <div style={{ fontSize:"11px", textTransform:"uppercase", letterSpacing:"0.08em", color:"var(--text-ghost)", marginBottom:"16px" }}>Works</div>
@@ -415,6 +554,15 @@ export default function ProfileView({ onPublish, onOpenWork }) {
           </div>
         )}
       </div>
+
+      {showEditProfile && (
+        <EditProfileSheet
+          profile={profile}
+          userId={session?.user?.id}
+          onClose={() => setShowEditProfile(false)}
+          onSaved={() => { fetchProfile(session.user.id); setShowEditProfile(false); }}
+        />
+      )}
     </div>
   );
 }
