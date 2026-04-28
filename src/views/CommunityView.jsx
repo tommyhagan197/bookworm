@@ -145,7 +145,7 @@ function ReadersYouMayKnow({ currentUserId, followingIds, followingProfiles, onF
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("id, display_name")
         .in("id", topIds);
 
       if (!profiles || profiles.length === 0) { setLoaded(true); return; }
@@ -249,7 +249,7 @@ function ReadingTheSameBooks({ currentUserId, followingIds, onFollow, onUnfollow
 
       const { data: others } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("id, display_name")
         .eq("currently_reading_title", me.currently_reading_title)
         .neq("id", currentUserId)
         .limit(20);
@@ -349,7 +349,7 @@ function BrowseByTaste({ currentUserId, followingIds, onFollow, onUnfollow, load
     async function load() {
       const { data } = await supabase
         .from("profiles")
-        .select("id, username, display_name, favorite_genres")
+        .select("id, display_name, favorite_genres")
         .contains("favorite_genres", [selectedGenre])
         .neq("id", currentUserId)
         .limit(20);
@@ -434,7 +434,7 @@ function FriendsTab() {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, username, display_name")
+        .select("id, display_name")
         .neq("id", user.id);
       setAllProfiles(profiles || []);
       setLoadingProfiles(false);
@@ -448,7 +448,7 @@ function FriendsTab() {
         setFollowingIds(new Set(ids));
         const { data: followedProfiles } = await supabase
           .from("profiles")
-          .select("id, username, display_name")
+          .select("id, display_name")
           .in("id", ids);
         setFollowingProfiles(followedProfiles || []);
       }
